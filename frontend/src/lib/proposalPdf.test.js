@@ -1,6 +1,7 @@
 import { createProposalPdfDefinition } from './proposalPdf';
 
 test('proposal PDF definition includes client, dates, investment and section text', () => {
+  const logoDataUrl = 'data:image/png;base64,cm9ic29u';
   const definition = createProposalPdfDefinition({
     title: 'Plano de atendimento',
     client_name: 'Cliente Exemplo',
@@ -15,7 +16,7 @@ test('proposal PDF definition includes client, dates, investment and section tex
         { title: 'Investimento', body: '' },
       ],
     },
-  });
+  }, logoDataUrl);
   const serialized = JSON.stringify(definition);
 
   expect(serialized).toContain('Cliente Exemplo');
@@ -24,4 +25,7 @@ test('proposal PDF definition includes client, dates, investment and section tex
   expect(serialized).toContain('Aumentar alcance');
   expect(serialized).toContain('Melhorar conversão');
   expect(serialized).toContain('São Paulo');
+  expect(definition.header.columns[0].image).toBe(logoDataUrl);
+  expect(serialized).toContain('#0052CC');
+  expect(serialized).not.toContain('#047857');
 });

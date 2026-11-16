@@ -1,6 +1,30 @@
-const PDF_GREEN = '#047857';
+const PDF_BLUE = '#0052CC';
 const PDF_DARK = '#17211f';
 const PDF_MUTED = '#596562';
+
+async function loadProposalLogo() {
+  const logoUrl = `${process.env.PUBLIC_URL || ''}/logo_robsonsvicero.png`;
+  const response = await fetch(logoUrl);
+  if (!response.ok) {
+    throw new Error(`Não foi possível carregar o logo para o PDF (${response.status}).`);
+  }
+
+  const logoBlob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') {
+        reject(new Error('Não foi possível converter o logo para o PDF.'));
+        return;
+      }
+      resolve(reader.result);
+    };
+    reader.onerror = () => {
+      reject(reader.error || new Error('Não foi possível converter o logo para o PDF.'));
+    };
+    reader.readAsDataURL(logoBlob);
+  });
+}
 
 function formatCurrency(cents) {
   return new Intl.NumberFormat('pt-BR', {
@@ -58,7 +82,7 @@ function contentLines(body) {
   return nodes;
 }
 
-export function createProposalPdfDefinition(proposal) {
+export function createProposalPdfDefinition(proposal, logoDataUrl) {
   const sections = proposal.content?.sections || [];
   const content = [
     { text: 'PROPOSTA COMERCIAL', style: 'eyebrow' },
@@ -108,7 +132,7 @@ export function createProposalPdfDefinition(proposal) {
       content.push({
         text: `Investimento total: ${formatCurrency(proposal.amount_cents)}`,
         bold: true,
-        color: PDF_GREEN,
+        color: PDF_BLUE,
         fontSize: 10,
         margin: [0, 0, 0, body ? 8 : 12],
       });
@@ -127,16 +151,24 @@ export function createProposalPdfDefinition(proposal) {
 
   return {
     pageSize: 'A4',
-    pageMargins: [48, 62, 48, 54],
+    pageMargins: [48, 96, 48, 54],
     defaultStyle: {
       font: 'Roboto',
       color: PDF_DARK,
     },
     header: {
-      margin: [48, 24, 48, 0],
+      margin: [48, 16, 48, 0],
       columns: [
-        { text: proposal.client_name || 'Proposta', color: PDF_GREEN, bold: true, fontSize: 8 },
-        { text: formatDate(proposal.issue_date), alignment: 'right', color: PDF_MUTED, fontSize: 8 },
+        { image: logoDataUrl, fit: [64, 64] },
+        {
+          width: '*',
+          stack: [
+            { text: 'PROPOSTA COMERCIAL', color: PDF_BLUE, bold: true, fontSize: 8 },
+            { text: proposal.client_name || 'Proposta', color: PDF_MUTED, fontSize: 8, margin: [0, 4, 0, 0] },
+            { text: formatDate(proposal.issue_date), color: PDF_MUTED, fontSize: 8, margin: [0, 3, 0, 0] },
+          ],
+          alignment: 'right',
+        },
       ],
       columnGap: 12,
     },
@@ -150,7 +182,7 @@ export function createProposalPdfDefinition(proposal) {
     content,
     styles: {
       eyebrow: {
-        color: PDF_GREEN,
+        color: PDF_BLUE,
         bold: true,
         fontSize: 8,
         characterSpacing: 1.6,
@@ -175,7 +207,7 @@ export function createProposalPdfDefinition(proposal) {
         lineHeight: 1.4,
       },
       amount: {
-        color: PDF_GREEN,
+        color: PDF_BLUE,
         bold: true,
         fontSize: 15,
       },
@@ -194,9 +226,10 @@ export function createProposalPdfDefinition(proposal) {
 }
 
 export async function downloadProposalPdf(proposal) {
-  const [pdfMakeModule, pdfFontsModule] = await Promise.all([
+  const [pdfMakeModule, pdfFontsModule, logoDataUrl] = await Promise.all([
     import('pdfmake/build/pdfmake'),
     import('pdfmake/build/vfs_fonts'),
+    loadProposalLogo(),
   ]);
   const pdfMake = pdfMakeModule.default || pdfMakeModule;
   const pdfFonts = pdfFontsModule.default || pdfFontsModule;
@@ -208,5 +241,5 @@ export async function downloadProposalPdf(proposal) {
     .replace(/[^a-zA-Z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .toLowerCase();
-  pdfMake.createPdf(createProposalPdfDefinition(proposal)).download(`${filename || 'proposta'}.pdf`);
+  pdfMake.createPdf(createProposalPdfDefinition(proposal, logoDataUrl)).download(`${filename || 'proposta'}.pdf`);
 }
