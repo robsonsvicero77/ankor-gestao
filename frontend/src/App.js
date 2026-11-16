@@ -9,6 +9,8 @@ import { ReceivablesPage } from './pages/ReceivablesPage';
 import { PayablesPage } from './pages/PayablesPage';
 import { ProposalsPage } from './pages/ProposalsPage';
 import { ProposalEditorPage } from './pages/ProposalEditorPage';
+import { ClientsPage } from './pages/ClientsPage';
+import { ClientEditorPage } from './pages/ClientEditorPage';
 import { LedgerPage } from './pages/LedgerPage';
 // import { SettingsPage } from './pages/SettingsPage';
 import { Loader2 } from 'lucide-react';
@@ -137,6 +139,30 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProposalEditorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clients"
+        element={
+          <ProtectedRoute>
+            <ClientsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clients/new"
+        element={
+          <ProtectedRoute>
+            <ClientEditorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clients/:clientId/edit"
+        element={
+          <ProtectedRoute>
+            <ClientEditorPage />
           </ProtectedRoute>
         }
       />

@@ -8,8 +8,9 @@ import httpx
 import os
 import logging
 import asyncio
+import re
 from pathlib import Path
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from typing import Any, List, Literal, Optional
 import uuid
 from datetime import date, datetime, timezone, timedelta
@@ -254,6 +255,162 @@ class ProposalResponse(BaseModel):
     content: ProposalContent
     created_at: str
     updated_at: str
+
+
+def _cpf_is_valid(document: str) -> bool:
+    if len(document) != 11 or len(set(document)) == 1:
+        return False
+
+    digits = [int(digit) for digit in document]
+    first_check = (
+        sum(digit * weight for digit, weight in zip(digits[:9], range(10, 1, -1))) * 10
+    ) % 11
+    first_check = 0 if first_check == 10 else first_check
+    second_check = (
+        sum(digit * weight for digit, weight in zip(digits[:10], range(11, 1, -1))) * 10
+    ) % 11
+    second_check = 0 if second_check == 10 else second_check
+    return digits[9:] == [first_check, second_check]
+
+
+def _cnpj_is_valid(document: str) -> bool:
+    if not re.fullmatch(r"[A-Z0-9]{12}[0-9]{2}", document) or len(set(document)) == 1:
+        return False
+
+    def check_digit(value: str, weights: List[int]) -> str:
+        total = sum(
+            (ord(character) - 48) * weight
+            for character, weight in zip(value, weights)
+        )
+        remainder = total % 11
+        return "0" if remainder < 2 else str(11 - remainder)
+
+    first_check = check_digit(document[:12], [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2])
+    second_check = check_digit(
+        document[:12] + first_check,
+        [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2],
+    )
+    return document[-2:] == first_check + second_check
+
+
+class ClientInput(BaseModel):
+    person_type: Literal["PF", "PJ"]
+    name: str = Field(min_length=1, max_length=200)
+    trade_name: Optional[str] = Field(default=None, max_length=200)
+    document: str = Field(max_length=32)
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(default=None, max_length=30)
+    contact_name: Optional[str] = Field(default=None, max_length=200)
+    postal_code: Optional[str] = None
+    street: Optional[str] = Field(default=None, max_length=200)
+    number: Optional[str] = Field(default=None, max_length=30)
+    complement: Optional[str] = Field(default=None, max_length=120)
+    district: Optional[str] = Field(default=None, max_length=120)
+    city: Optional[str] = Field(default=None, max_length=120)
+    state: Optional[str] = None
+    notes: Optional[str] = Field(default=None, max_length=3000)
+
+    @field_validator("name")
+    @classmethod
+    def name_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("O nome ou razão social é obrigatório")
+        return value
+
+    @field_validator(
+        "trade_name", "phone", "contact_name", "street", "number", "complement",
+        "district", "city", "notes",
+        mode="before",
+    )
+    @classmethod
+    def normalize_optional_text(cls, value: Any) -> Any:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            return value
+        value = value.strip()
+        return value or None
+
+    @field_validator("document", mode="before")
+    @classmethod
+    def normalize_document(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
+        return re.sub(r"[^A-Za-z0-9]", "", value).upper()
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: Any) -> Any:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            return value
+        value = value.strip()
+        return value or None
+
+    @field_validator("postal_code", mode="before")
+    @classmethod
+    def normalize_postal_code(cls, value: Any) -> Any:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            return value
+        value = re.sub(r"\D", "", value)
+        if not value:
+            return None
+        if len(value) != 8:
+            raise ValueError("Informe um CEP com 8 dígitos")
+        return value
+
+    @field_validator("state", mode="before")
+    @classmethod
+    def normalize_state(cls, value: Any) -> Any:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            return value
+        value = value.strip().upper()
+        if not value:
+            return None
+        if not re.fullmatch(r"[A-Z]{2}", value):
+            raise ValueError("Informe a sigla do estado com 2 letras")
+        return value
+
+    @model_validator(mode="after")
+    def document_must_match_person_type(self):
+        is_valid = (
+            _cpf_is_valid(self.document)
+            if self.person_type == "PF"
+            else _cnpj_is_valid(self.document)
+        )
+        if not is_valid:
+            document_type = "CPF" if self.person_type == "PF" else "CNPJ"
+            raise ValueError(f"Informe um {document_type} válido")
+        return self
+
+
+class ClientResponse(BaseModel):
+    id: str
+    tenant_id: str
+    person_type: Literal["PF", "PJ"]
+    name: str
+    trade_name: Optional[str] = None
+    document: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    contact_name: Optional[str] = None
+    postal_code: Optional[str] = None
+    street: Optional[str] = None
+    number: Optional[str] = None
+    complement: Optional[str] = None
+    district: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: str
+    updated_at: str
+
 
 class LedgerEntryResponse(BaseModel):
     id: str
@@ -947,6 +1104,86 @@ async def update_proposal_status(
     if not updated:
         raise HTTPException(status_code=404, detail="Proposta não encontrada")
     return ProposalResponse(**updated)
+
+
+# ==================== CLIENTS ENDPOINTS ====================
+
+@api_router.get("/clients", response_model=List[ClientResponse])
+async def list_clients(current_user: dict = Depends(get_current_user)):
+    clients = await database.fetch_many(
+        "clients",
+        {"tenant_id": current_user["tenant_id"]},
+        1000,
+        order_by="updated_at",
+        descending=True,
+    )
+    return [ClientResponse(**client) for client in clients]
+
+
+@api_router.post(
+    "/clients",
+    response_model=ClientResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_client(
+    data: ClientInput,
+    current_user: dict = Depends(get_current_user),
+):
+    now = datetime.now(timezone.utc).isoformat()
+    try:
+        client = await database.insert(
+            "clients",
+            {
+                "id": str(uuid.uuid4()),
+                "tenant_id": current_user["tenant_id"],
+                **data.model_dump(mode="json"),
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+    except asyncpg.UniqueViolationError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="Já existe um cliente com este CPF/CNPJ.",
+        ) from exc
+    return ClientResponse(**client)
+
+
+@api_router.get("/clients/{client_id}", response_model=ClientResponse)
+async def get_client(client_id: str, current_user: dict = Depends(get_current_user)):
+    client = await database.fetch_one(
+        "clients",
+        {"id": client_id, "tenant_id": current_user["tenant_id"]},
+    )
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    return ClientResponse(**client)
+
+
+@api_router.put("/clients/{client_id}", response_model=ClientResponse)
+async def update_client(
+    client_id: str,
+    data: ClientInput,
+    current_user: dict = Depends(get_current_user),
+):
+    try:
+        client = await database.update_one(
+            "clients",
+            {"id": client_id, "tenant_id": current_user["tenant_id"]},
+            {
+                **data.model_dump(mode="json"),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+    except asyncpg.UniqueViolationError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="Já existe um cliente com este CPF/CNPJ.",
+        ) from exc
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    return ClientResponse(**client)
+
 
 # ==================== LEDGER ENDPOINTS ====================
 

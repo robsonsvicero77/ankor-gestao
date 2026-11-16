@@ -6,6 +6,7 @@ import {
   ArrowDownCircle, 
   ArrowUpCircle, 
   FileText,
+  Users,
   BookOpen,
   LogOut,
   Menu,
@@ -20,6 +21,7 @@ const navItems = [
   { path: '/receivables', label: 'Receitas', icon: ArrowDownCircle },
   { path: '/payables', label: 'Despesas', icon: ArrowUpCircle },
   { path: '/proposals', label: 'Propostas', icon: FileText },
+  { path: '/clients', label: 'Clientes', icon: Users },
   { path: '/ledger', label: 'Histórico', icon: BookOpen },
   { path: '/settings', label: 'Configurações', icon: Settings },
 ];

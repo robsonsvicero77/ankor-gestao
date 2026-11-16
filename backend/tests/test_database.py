@@ -73,6 +73,15 @@ def test_proposals_support_date_and_json_fields():
     }
 
 
+def test_clients_support_tenant_scoped_document_queries():
+    tenant_id = uuid.uuid4()
+
+    assert _where_clause("clients", {"tenant_id": str(tenant_id)}) == (
+        ' WHERE "tenant_id" = $1',
+        [tenant_id],
+    )
+
+
 def test_database_reads_and_mutations_require_filters():
     database = PostgresDatabase()
 

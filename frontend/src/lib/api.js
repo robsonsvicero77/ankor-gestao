@@ -94,6 +94,14 @@ export const proposalsApi = {
   updateStatus: (id, status) => api.patch(`/proposals/${id}/status`, { status }),
 };
 
+// Clients API
+export const clientsApi = {
+  list: () => api.get('/clients'),
+  get: (id) => api.get(`/clients/${id}`),
+  create: (data) => api.post('/clients', data),
+  update: (id, data) => api.put(`/clients/${id}`, data),
+};
+
 // Dashboard API
 export const dashboardApi = {
   get: () => api.get('/dashboard'),

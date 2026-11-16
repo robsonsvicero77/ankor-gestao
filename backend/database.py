@@ -28,6 +28,12 @@ TABLE_COLUMNS = {
         "issue_date", "valid_until", "amount_cents", "status", "content",
         "created_at", "updated_at",
     },
+    "clients": {
+        "id", "tenant_id", "person_type", "name", "trade_name", "document",
+        "email", "phone", "contact_name", "postal_code", "street", "number",
+        "complement", "district", "city", "state", "notes", "created_at",
+        "updated_at",
+    },
     "ledger_entries": {
         "id", "tenant_id", "entry_type", "direction", "amount_cents",
         "occurred_at", "reference_type", "reference_id", "note", "created_at",
