@@ -1,0 +1,135 @@
+{
+  "project_name": "FinPredict SaaS",
+  "theme_strategy": {
+    "mode": "dark",
+    "emotional_archetype": "ARCHETYPE 2: THE PERFORMANCE PRO (Refined for Finance)",
+    "primary_vibe": "Trust, Clarity, Precision",
+    "visual_style": "Minimalist, Data-First, High-Contrast Dark Mode"
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Chivo, sans-serif",
+      "weight": "700",
+      "usage": "Page titles, Section headers, Key metrics",
+      "install_command": "Already available via Google Fonts or standard web fonts"
+    },
+    "body": {
+      "font_family": "Inter, sans-serif",
+      "weight": "400",
+      "usage": "General text, Labels, Descriptions",
+      "notes": "Use tabular-nums class for all financial data to ensure alignment"
+    },
+    "numbers": {
+      "font_family": "JetBrains Mono, monospace",
+      "usage": "Ledger entries, sensitive data, currency displays",
+      "notes": "Optional: Use Inter with tabular-nums if monospace is too aggressive"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": {
+        "default": "#09090b", 
+        "paper": "#18181b",
+        "subtle": "#27272a"
+      },
+      "text": {
+        "primary": "#fafafa",
+        "secondary": "#a1a1aa",
+        "muted": "#52525b"
+      },
+      "brand": {
+        "primary": "#10b981", 
+        "primary_hover": "#059669",
+        "secondary": "#3b82f6"
+      },
+      "status": {
+        "success": "#10b981",
+        "warning": "#f59e0b",
+        "error": "#ef4444",
+        "info": "#3b82f6"
+      },
+      "border": {
+        "default": "#27272a",
+        "hover": "#3f3f46"
+      }
+    },
+    "rules": [
+      "NEVER use pure black (#000000) for backgrounds. Use #09090b (Zinc 950).",
+      "Text over images must have a subtle text-shadow or bg-gradient overlay.",
+      "Financial positives are Green (Emerald-500), negatives are Red (Rose-500).",
+      "Interactive elements must have clear hover states (brightness-110 or bg-white/5)."
+    ]
+  },
+  "spacing_and_layout": {
+    "scale_factor": "Generous (2x standard)",
+    "dashboard_grid": "Bento Grid Mode B (High Density)",
+    "mobile_strategy": "Stack vertically, use Bottom Sheets (Drawers) for complex actions",
+    "container_padding": {
+      "mobile": "p-4",
+      "tablet": "p-8",
+      "desktop": "p-12"
+    },
+    "border_radius": {
+      "outer": "rounded-xl",
+      "inner": "rounded-lg",
+      "small": "rounded-md"
+    }
+  },
+  "components": {
+    "cards": {
+      "style": "Flat, 1px subtle border (border-zinc-800), bg-zinc-950/50 backdrop-blur-sm",
+      "interaction": "Hover: border-zinc-700 transition-colors duration-200"
+    },
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 rounded-md font-medium shadow-lg shadow-primary/20",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md",
+      "ghost": "hover:bg-accent hover:text-accent-foreground rounded-md",
+      "destructive": "bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md"
+    },
+    "inputs": {
+      "style": "bg-zinc-900/50 border-zinc-800 focus:border-primary focus:ring-1 focus:ring-primary rounded-md h-10"
+    },
+    "charts": {
+      "library": "Recharts",
+      "style": "Minimalist, hide grid lines if possible, use custom tooltips with glassmorphism"
+    },
+    "navigation": {
+      "mobile": "Bottom Tab Bar (Fixed)",
+      "desktop": "Sidebar (Collapsible or Mini)"
+    }
+  },
+  "assets": {
+    "icons": {
+      "library": "Lucide React",
+      "style": "Stroke width 1.5px or 2px, consistent sizing (w-4 h-4 for small, w-5 h-5 for distinct)"
+    },
+    "images": {
+      "login_background": {
+        "url": "https://images.unsplash.com/photo-1743778812446-89def1e784cf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMGdlb21ldHJpYyUyMGRhcmslMjBmaW5hbmNlJTIwYmFja2dyb3VuZCUyMG1pbmltYWxpc3R8ZW58MHx8fHwxNzcyNDYwMDM1fDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Abstract architectural structure representing stability",
+        "usage": "Cover image for Login/Register split screen"
+      },
+      "fallback_patterns": "Use CSS radial gradients (e.g., radial-gradient(circle at top right, #10b98110, transparent)) for empty states or headers."
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "backdrop-blur-xl bg-black/40 border border-white/10",
+    "gradients": "Subtle glows only. No full-screen gradients. Use 'spotlight' effects for headers.",
+    "shadows": "shadow-[0_8px_30px_rgb(0,0,0,0.12)] for floating elements (modals, dropdowns)."
+  },
+  "universal_guidelines": [
+    "DO NOT use generic centered layouts. Use asymmetrical grids.",
+    "Data density is key for dashboards. Don't waste space, but keep it legible.",
+    "Animation: Use framer-motion for page transitions and list entry (staggered).",
+    "Accessibility: Ensure text contrast ratio > 4.5:1. Use ARIA labels on icon buttons.",
+    "Micro-interactions: Buttons should scale down slightly (0.98) on click.",
+    "Currency formatting: Always use 'R$' and correct locale 'pt-BR'."
+  ],
+  "instructions_to_main_agent": {
+    "step_1": "Setup the global theme in index.css (define CSS variables for colors).",
+    "step_2": "Create the 'Layout' component that handles the responsive shell (Sidebar/BottomNav).",
+    "step_3": "Implement the Dashboard using the Bento Grid strategy.",
+    "step_4": "Build reusable 'MoneyInput' and 'StatusBadge' components.",
+    "step_5": "Ensure all text is in Portuguese (BR)."
+  }
+}
