@@ -9,10 +9,10 @@ import os
 import logging
 import asyncio
 from pathlib import Path
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, Field, field_validator, model_validator
+from typing import Any, List, Literal, Optional
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 import csv
 import io
 import resend
@@ -142,6 +142,116 @@ class PayableResponse(BaseModel):
     recurrence_type: Optional[str] = None
     recurrence_end_date: Optional[str] = None
     parent_id: Optional[str] = None
+    created_at: str
+    updated_at: str
+
+ProposalStatus = Literal[
+    "RASCUNHO",
+    "ENVIADA",
+    "EM_NEGOCIACAO",
+    "APROVADA",
+    "RECUSADA",
+    "EXPIRADA",
+    "CANCELADA",
+]
+
+
+class ProposalSection(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    body: str = Field(default="", max_length=20000)
+
+    @field_validator("title")
+    @classmethod
+    def title_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("O título da seção é obrigatório")
+        return value
+
+
+class ProposalContent(BaseModel):
+    sections: List[ProposalSection] = Field(default_factory=list, max_length=30)
+    city: Optional[str] = Field(default=None, max_length=120)
+
+
+class ProposalCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    client_name: str = Field(min_length=1, max_length=200)
+    contact_name: Optional[str] = Field(default=None, max_length=200)
+    issue_date: date
+    valid_until: date
+    amount_cents: int = Field(ge=0)
+    status: ProposalStatus = "RASCUNHO"
+    content: ProposalContent = Field(default_factory=ProposalContent)
+
+    @field_validator("title", "client_name")
+    @classmethod
+    def required_text_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Este campo é obrigatório")
+        return value
+
+    @model_validator(mode="after")
+    def validity_must_not_precede_issue_date(self):
+        if self.valid_until < self.issue_date:
+            raise ValueError("A validade não pode ser anterior à emissão")
+        return self
+
+
+class ProposalUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    client_name: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    contact_name: Optional[str] = Field(default=None, max_length=200)
+    issue_date: Optional[date] = None
+    valid_until: Optional[date] = None
+    amount_cents: Optional[int] = Field(default=None, ge=0)
+    status: Optional[ProposalStatus] = None
+    content: Optional[ProposalContent] = None
+
+    @field_validator("title", "client_name")
+    @classmethod
+    def supplied_required_text_must_not_be_blank(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            raise ValueError("Este campo não pode ser nulo")
+        value = value.strip()
+        if not value:
+            raise ValueError("Este campo é obrigatório")
+        return value
+
+    @field_validator("issue_date", "valid_until", "amount_cents", "status", "content")
+    @classmethod
+    def supplied_required_fields_must_not_be_null(cls, value: Any) -> Any:
+        if value is None:
+            raise ValueError("Este campo não pode ser nulo")
+        return value
+
+    @model_validator(mode="after")
+    def supplied_validity_must_not_precede_issue_date(self):
+        if (
+            self.issue_date is not None
+            and self.valid_until is not None
+            and self.valid_until < self.issue_date
+        ):
+            raise ValueError("A validade não pode ser anterior à emissão")
+        return self
+
+
+class ProposalStatusUpdate(BaseModel):
+    status: ProposalStatus
+
+
+class ProposalResponse(BaseModel):
+    id: str
+    tenant_id: str
+    title: str
+    client_name: str
+    contact_name: Optional[str] = None
+    issue_date: str
+    valid_until: str
+    amount_cents: int
+    status: ProposalStatus
+    content: ProposalContent
     created_at: str
     updated_at: str
 
@@ -736,6 +846,107 @@ async def mark_payable_paid(payable_id: str, current_user: dict = Depends(get_cu
         raise HTTPException(status_code=400, detail="Despesa já foi marcada como paga")
     updated["status"] = "PAGO"
     return PayableResponse(**updated)
+
+# ==================== PROPOSALS ENDPOINTS ====================
+
+@api_router.get("/proposals", response_model=List[ProposalResponse])
+async def list_proposals(
+    status_filter: Optional[ProposalStatus] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    proposals = await database.fetch_many(
+        "proposals",
+        {"tenant_id": current_user["tenant_id"]},
+        1000,
+        order_by="updated_at",
+        descending=True,
+    )
+    if status_filter:
+        proposals = [proposal for proposal in proposals if proposal["status"] == status_filter]
+    return [ProposalResponse(**proposal) for proposal in proposals]
+
+
+@api_router.post("/proposals", response_model=ProposalResponse, status_code=status.HTTP_201_CREATED)
+async def create_proposal(
+    data: ProposalCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    now = datetime.now(timezone.utc).isoformat()
+    proposal_data = data.model_dump(mode="json")
+    proposal = await database.insert(
+        "proposals",
+        {
+            "id": str(uuid.uuid4()),
+            "tenant_id": current_user["tenant_id"],
+            **proposal_data,
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    return ProposalResponse(**proposal)
+
+
+@api_router.get("/proposals/{proposal_id}", response_model=ProposalResponse)
+async def get_proposal(proposal_id: str, current_user: dict = Depends(get_current_user)):
+    proposal = await database.fetch_one(
+        "proposals",
+        {"id": proposal_id, "tenant_id": current_user["tenant_id"]},
+    )
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposta não encontrada")
+    return ProposalResponse(**proposal)
+
+
+@api_router.put("/proposals/{proposal_id}", response_model=ProposalResponse)
+async def update_proposal(
+    proposal_id: str,
+    data: ProposalUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    tenant_id = current_user["tenant_id"]
+    proposal = await database.fetch_one(
+        "proposals", {"id": proposal_id, "tenant_id": tenant_id}
+    )
+    if not proposal:
+        raise HTTPException(status_code=404, detail="Proposta não encontrada")
+
+    update_data = data.model_dump(mode="json", exclude_unset=True)
+    issue_date = update_data.get("issue_date", proposal["issue_date"])
+    valid_until = update_data.get("valid_until", proposal["valid_until"])
+    if date.fromisoformat(valid_until) < date.fromisoformat(issue_date):
+        raise HTTPException(
+            status_code=422,
+            detail="A validade não pode ser anterior à emissão",
+        )
+
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    updated = await database.update_one(
+        "proposals",
+        {"id": proposal_id, "tenant_id": tenant_id},
+        update_data,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Proposta não encontrada")
+    return ProposalResponse(**updated)
+
+
+@api_router.patch("/proposals/{proposal_id}/status", response_model=ProposalResponse)
+async def update_proposal_status(
+    proposal_id: str,
+    data: ProposalStatusUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    updated = await database.update_one(
+        "proposals",
+        {"id": proposal_id, "tenant_id": current_user["tenant_id"]},
+        {
+            "status": data.status,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Proposta não encontrada")
+    return ProposalResponse(**updated)
 
 # ==================== LEDGER ENDPOINTS ====================
 

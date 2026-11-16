@@ -23,6 +23,11 @@ TABLE_COLUMNS = {
         "due_date", "paid_at", "is_recurring", "recurrence_type",
         "recurrence_end_date", "parent_id", "created_at", "updated_at",
     },
+    "proposals": {
+        "id", "tenant_id", "title", "client_name", "contact_name",
+        "issue_date", "valid_until", "amount_cents", "status", "content",
+        "created_at", "updated_at",
+    },
     "ledger_entries": {
         "id", "tenant_id", "entry_type", "direction", "amount_cents",
         "occurred_at", "reference_type", "reference_id", "note", "created_at",
@@ -40,11 +45,12 @@ UUID_COLUMNS = {
     "id", "tenant_id", "owner_user_id", "parent_id", "reference_id",
     "receivable_id",
 }
+DATE_COLUMNS = {"issue_date", "valid_until"}
 TIMESTAMP_COLUMNS = {
     "created_at", "updated_at", "last_login_at", "due_date", "paid_at",
     "recurrence_end_date", "occurred_at", "sent_at", "last_run",
 }
-JSON_COLUMNS = {"results"}
+JSON_COLUMNS = {"results", "content"}
 FILTER_OPERATORS = {"$gte": ">=", "$lte": "<=", "$gt": ">", "$lt": "<"}
 
 
@@ -64,6 +70,8 @@ def _normalize_value(column: str, value: Any) -> Any:
         return None
     if column in UUID_COLUMNS:
         return value if isinstance(value, uuid.UUID) else uuid.UUID(str(value))
+    if column in DATE_COLUMNS and isinstance(value, str):
+        return date.fromisoformat(value)
     if column in TIMESTAMP_COLUMNS and isinstance(value, str):
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
         return parsed.replace(tzinfo=timezone.utc) if parsed.tzinfo is None else parsed

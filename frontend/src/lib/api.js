@@ -85,6 +85,15 @@ export const payablesApi = {
   markPaid: (id) => api.post(`/payables/${id}/mark-paid`),
 };
 
+// Proposals API
+export const proposalsApi = {
+  list: (status) => api.get('/proposals', { params: { status_filter: status } }),
+  get: (id) => api.get(`/proposals/${id}`),
+  create: (data) => api.post('/proposals', data),
+  update: (id, data) => api.put(`/proposals/${id}`, data),
+  updateStatus: (id, status) => api.patch(`/proposals/${id}/status`, { status }),
+};
+
 // Dashboard API
 export const dashboardApi = {
   get: () => api.get('/dashboard'),

@@ -10,9 +10,11 @@ Hostinger.
 2. Run [`db/migrations/001_create_tables.sql`](../db/migrations/001_create_tables.sql)
    in the Supabase SQL Editor. It creates the application tables and provisions
    a tenant/profile automatically for each new Auth user.
-3. Configure the project's Auth site URL as the Hostinger site URL. Add local
+3. Run [`db/migrations/002_create_proposals.sql`](../db/migrations/002_create_proposals.sql)
+   in the Supabase SQL Editor to enable proposal storage before using the page.
+4. Configure the project's Auth site URL as the Hostinger site URL. Add local
    development URLs to the allowed redirect URLs if needed.
-4. Copy the project URL and publishable/anon key from the Supabase API settings.
+5. Copy the project URL and publishable/anon key from the Supabase API settings.
    The frontend key is public by design; never expose the Postgres password.
 
 ## Vercel API

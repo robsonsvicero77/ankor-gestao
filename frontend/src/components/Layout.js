@@ -5,6 +5,7 @@ import {
   LayoutDashboard, 
   ArrowDownCircle, 
   ArrowUpCircle, 
+  FileText,
   BookOpen,
   LogOut,
   Menu,
@@ -18,9 +19,16 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/receivables', label: 'Receitas', icon: ArrowDownCircle },
   { path: '/payables', label: 'Despesas', icon: ArrowUpCircle },
+  { path: '/proposals', label: 'Propostas', icon: FileText },
   { path: '/ledger', label: 'Histórico', icon: BookOpen },
   { path: '/settings', label: 'Configurações', icon: Settings },
 ];
+
+const mobileNavItems = navItems.filter((item) => item.path !== '/settings');
+
+function isNavItemActive(pathname, itemPath) {
+  return pathname === itemPath || pathname.startsWith(`${itemPath}/`);
+}
 
 export function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -43,7 +51,7 @@ export function Layout({ children }) {
           <nav className="flex-1 space-y-1 px-3 py-4">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const isActive = isNavItemActive(location.pathname, item.path);
               return (
                 <NavLink
                   key={item.path}
@@ -115,7 +123,7 @@ export function Layout({ children }) {
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = isNavItemActive(location.pathname, item.path);
                 return (
                   <NavLink
                     key={item.path}
@@ -151,21 +159,21 @@ export function Layout({ children }) {
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-zinc-800 bg-[#18181b]/95 backdrop-blur h-16">
-        {navItems.map((item) => {
+        {mobileNavItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+          const isActive = isNavItemActive(location.pathname, item.path);
           return (
             <NavLink
               key={item.path}
               to={item.path}
               data-testid={`mobile-nav-${item.path.slice(1)}`}
               className={cn(
-                'flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors',
+                'flex min-w-0 flex-col items-center gap-1 px-1 py-2 rounded-lg transition-colors',
                 isActive ? 'text-emerald-500' : 'text-zinc-500'
               )}
             >
               <Icon className="h-5 w-5" />
-              <span className="text-xs font-medium">{item.label}</span>
+              <span className="max-w-full truncate text-[10px] font-medium">{item.label}</span>
             </NavLink>
           );
         })}

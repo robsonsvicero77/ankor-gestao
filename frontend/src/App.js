@@ -7,6 +7,8 @@ import { OnboardingPage } from './pages/OnboardingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ReceivablesPage } from './pages/ReceivablesPage';
 import { PayablesPage } from './pages/PayablesPage';
+import { ProposalsPage } from './pages/ProposalsPage';
+import { ProposalEditorPage } from './pages/ProposalEditorPage';
 import { LedgerPage } from './pages/LedgerPage';
 // import { SettingsPage } from './pages/SettingsPage';
 import { Loader2 } from 'lucide-react';
@@ -111,6 +113,30 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <PayablesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/proposals"
+        element={
+          <ProtectedRoute>
+            <ProposalsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/proposals/new"
+        element={
+          <ProtectedRoute>
+            <ProposalEditorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/proposals/:proposalId/edit"
+        element={
+          <ProtectedRoute>
+            <ProposalEditorPage />
           </ProtectedRoute>
         }
       />

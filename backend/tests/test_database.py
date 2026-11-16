@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import pytest
 
@@ -54,6 +54,22 @@ def test_serialize_record_returns_json_compatible_values():
         "id": str(user_id),
         "created_at": "2026-01-01T00:00:00+00:00",
         "results": [{"status": "sent"}],
+    }
+
+
+def test_proposals_support_date_and_json_fields():
+    issue_date = date(2026, 1, 1)
+
+    assert _where_clause("proposals", {"issue_date": "2026-01-01"}) == (
+        ' WHERE "issue_date" = $1',
+        [issue_date],
+    )
+    assert _serialize_record({
+        "issue_date": issue_date,
+        "content": '{"sections":[]}',
+    }) == {
+        "issue_date": "2026-01-01",
+        "content": {"sections": []},
     }
 
 
