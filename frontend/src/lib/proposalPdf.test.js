@@ -38,3 +38,41 @@ test('proposal PDF definition includes client, dates, investment and section tex
   expect(serialized).toContain('#0052CC');
   expect(serialized).not.toContain('#047857');
 });
+
+test('proposal PDF groups investment notes and scheduled payments', () => {
+  const definition = createProposalPdfDefinition({
+    title: 'Identidade visual',
+    client_name: 'Cliente Exemplo',
+    issue_date: '2026-03-01',
+    valid_until: '2026-03-31',
+    amount_cents: 100000,
+    content: {
+      payment_schedule: [
+        {
+          description: 'Entrada',
+          due_date: '2026-03-05',
+          amount_cents: 40000,
+        },
+        {
+          description: 'Entrega',
+          due_date: '2026-03-31',
+          amount_cents: 60000,
+        },
+      ],
+      sections: [
+        { title: 'Investimento', body: 'Valor sujeito à aprovação final.' },
+        { title: 'Condições de pagamento', body: 'Pagamento por transferência.' },
+        { title: 'Aceite', body: 'Aprovação por e-mail.' },
+      ],
+    },
+  }, 'data:image/png;base64,cm9ic29u');
+  const serialized = JSON.stringify(definition);
+
+  expect(serialized).toContain('Investimento e formas de pagamento');
+  expect(serialized).toContain('1.000,00');
+  expect(serialized).toContain('Entrada');
+  expect(serialized).toContain('05/03/2026');
+  expect(serialized).toContain('Valor sujeito à aprovação final.');
+  expect(serialized).toContain('Pagamento por transferência.');
+  expect(serialized.match(/Investimento e formas de pagamento/g)).toHaveLength(1);
+});

@@ -52,6 +52,18 @@ def test_create_proposal_uses_authenticated_tenant(monkeypatch):
                 "display_name": "Estúdio Exemplo",
                 "email": "contato@example.com",
             },
+            "payment_schedule": [
+                {
+                    "description": "Entrada",
+                    "due_date": "2026-01-05",
+                    "amount_cents": 50000,
+                },
+                {
+                    "description": "Entrega",
+                    "due_date": "2026-01-31",
+                    "amount_cents": 75000,
+                },
+            ],
         },
     )
 
@@ -60,8 +72,69 @@ def test_create_proposal_uses_authenticated_tenant(monkeypatch):
     assert saved["tenant_id"] == tenant_id
     assert saved["content"]["sections"][0]["body"] == "Texto"
     assert saved["content"]["provider"]["display_name"] == "Estúdio Exemplo"
+    assert saved["content"]["payment_schedule"][0]["amount_cents"] == 50000
     assert result.content.provider.display_name == "Estúdio Exemplo"
+    assert result.content.payment_schedule[1].description == "Entrega"
     assert result.status == "RASCUNHO"
+
+
+def test_proposal_payment_schedule_must_match_investment_total():
+    with pytest.raises(ValidationError, match="soma das parcelas"):
+        server.ProposalCreate(
+            title="Consultoria",
+            client_name="Cliente",
+            issue_date=date(2026, 1, 1),
+            valid_until=date(2026, 1, 31),
+            amount_cents=125001,
+            content={
+                "payment_schedule": [{
+                    "description": "Parcela única",
+                    "due_date": "2026-01-31",
+                    "amount_cents": 125000,
+                }],
+            },
+        )
+
+
+def test_proposal_content_allows_financial_section_when_legacy_sections_are_at_limit():
+    content = server.ProposalContent(
+        sections=[
+            {"title": f"Seção {index}", "body": ""}
+            for index in range(31)
+        ],
+    )
+
+    assert len(content.sections) == 31
+
+
+def test_partial_proposal_update_validates_existing_payment_schedule(monkeypatch):
+    tenant_id = str(uuid.uuid4())
+    proposal = make_proposal(tenant_id)
+    proposal["content"]["payment_schedule"] = [{
+        "description": "Parcela única",
+        "due_date": "2026-01-31",
+        "amount_cents": 125000,
+    }]
+
+    async def fetch_one(_table, _filters):
+        return proposal
+
+    async def update_one(*_args, **_kwargs):
+        raise AssertionError("A proposal with mismatched payments must not be saved")
+
+    monkeypatch.setattr(server.database, "fetch_one", fetch_one)
+    monkeypatch.setattr(server.database, "update_one", update_one)
+
+    async def run():
+        with pytest.raises(HTTPException) as error:
+            await server.update_proposal(
+                proposal["id"],
+                server.ProposalUpdate(amount_cents=130000),
+                {"tenant_id": tenant_id},
+            )
+        assert error.value.status_code == 422
+
+    asyncio.run(run())
 
 
 def test_list_proposals_queries_only_authenticated_tenant(monkeypatch):

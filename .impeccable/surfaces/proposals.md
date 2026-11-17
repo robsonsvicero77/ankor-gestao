@@ -17,5 +17,5 @@ FIRST VIEWPORT: Place the page title and primary create action above compact sta
 FORM: Searchable register plus section-based editor, extending the established app patterns. Preserve the user-pinned model and current visual world.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
-## Unresolved decisions
-Whether approved proposals should create receivables remains open; this implementation will not create financial entries automatically. Company logo and sender details are not part of the confirmed request.
+## Decisions
+Proposals can include an optional payment schedule for reference; when present, its installments must sum to the investment total. Proposals never create receivables or other financial entries, even when approved. Only signed contracts create receivables. Company logo and sender details are not part of the confirmed request.

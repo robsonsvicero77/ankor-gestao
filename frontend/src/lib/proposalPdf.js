@@ -82,8 +82,83 @@ function contentLines(body) {
   return nodes;
 }
 
+function normalizeSectionTitle(title) {
+  return String(title || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function isFinancialSection(section) {
+  return section.kind === 'financial'
+    || ['investimento', 'condicoes de pagamento'].includes(normalizeSectionTitle(section.title));
+}
+
+function financialSectionContent(proposal, sections) {
+  const notes = sections.map((section) => {
+    const body = section.body?.trim() || '';
+    if (!body) return '';
+
+    if (section.kind !== 'financial') {
+      const title = normalizeSectionTitle(section.title);
+      if (title === 'investimento') return `Observações sobre investimento:\n${body}`;
+      if (title === 'condicoes de pagamento') return `Condições de pagamento:\n${body}`;
+    }
+
+    return body;
+  }).filter(Boolean).join('\n\n');
+  const nodes = [
+    { text: 'Investimento total', color: PDF_MUTED, fontSize: 9, margin: [0, 0, 0, 3] },
+    {
+      text: formatCurrency(proposal.amount_cents),
+      bold: true,
+      color: PDF_BLUE,
+      fontSize: 15,
+      margin: [0, 0, 0, 12],
+    },
+  ];
+  const payments = proposal.content?.payment_schedule || [];
+
+  if (payments.length) {
+    nodes.push({
+      table: {
+        headerRows: 1,
+        widths: ['*', 'auto', 'auto'],
+        body: [
+          [
+            { text: 'PARCELA', style: 'paymentTableHeader' },
+            { text: 'VENCIMENTO', style: 'paymentTableHeader' },
+            { text: 'VALOR', style: 'paymentTableHeader', alignment: 'right' },
+          ],
+          ...payments.map((payment) => [
+            { text: payment.description, color: PDF_DARK },
+            { text: formatDate(payment.due_date), color: PDF_DARK },
+            { text: formatCurrency(payment.amount_cents), color: PDF_DARK, alignment: 'right' },
+          ]),
+        ],
+      },
+      layout: {
+        fillColor: (rowIndex) => (rowIndex === 0 ? '#F0F4F3' : null),
+        hLineColor: () => '#D7DEDB',
+        vLineWidth: () => 0,
+        paddingLeft: () => 8,
+        paddingRight: () => 8,
+        paddingTop: () => 7,
+        paddingBottom: () => 7,
+      },
+      fontSize: 9,
+      margin: [0, 0, 0, notes ? 12 : 0],
+    });
+  }
+
+  if (notes) nodes.push(...contentLines(notes));
+  return nodes;
+}
+
 export function createProposalPdfDefinition(proposal, logoDataUrl) {
   const sections = proposal.content?.sections || [];
+  const financialSections = sections.filter(isFinancialSection);
   const provider = proposal.content?.provider || {};
   const providerContact = [
     provider.display_name,
@@ -107,16 +182,6 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
             { text: [{ text: 'EMISSÃO\n', style: 'metaLabel' }, { text: formatDate(proposal.issue_date) || '—', style: 'metaValue' }] },
             { text: [{ text: 'VALIDADE\n', style: 'metaLabel' }, { text: formatDate(proposal.valid_until) || '—', style: 'metaValue' }] },
           ],
-          [
-            {
-              text: [
-                { text: 'INVESTIMENTO TOTAL\n', style: 'metaLabel' },
-                { text: formatCurrency(proposal.amount_cents), style: 'amount' },
-              ],
-              colSpan: 2,
-            },
-            {},
-          ],
         ],
       },
       layout: {
@@ -131,22 +196,34 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
     },
   ];
 
+  let financialRendered = false;
   sections.forEach((section) => {
+    if (isFinancialSection(section)) {
+      if (!financialRendered) {
+        const title = financialSections.find((item) => item.kind === 'financial')?.title
+          || 'Investimento e formas de pagamento';
+        content.push({ text: title, style: 'sectionHeading', keepWithNext: true });
+        content.push(...financialSectionContent(proposal, financialSections));
+        financialRendered = true;
+      }
+      return;
+    }
+
     const body = section.body?.trim() || '';
-    if (!body && section.title.toLowerCase() !== 'investimento') return;
+    if (!body) return;
 
     content.push({ text: section.title, style: 'sectionHeading', keepWithNext: true });
-    if (section.title.toLowerCase() === 'investimento') {
-      content.push({
-        text: `Investimento total: ${formatCurrency(proposal.amount_cents)}`,
-        bold: true,
-        color: PDF_BLUE,
-        fontSize: 10,
-        margin: [0, 0, 0, body ? 8 : 12],
-      });
-    }
-    if (body) content.push(...contentLines(body));
+    content.push(...contentLines(body));
   });
+
+  if (!financialRendered) {
+    content.push({
+      text: 'Investimento e formas de pagamento',
+      style: 'sectionHeading',
+      keepWithNext: true,
+    });
+    content.push(...financialSectionContent(proposal, []));
+  }
 
   if (proposal.content?.city) {
     content.push({
@@ -221,10 +298,11 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
         fontSize: 10,
         lineHeight: 1.4,
       },
-      amount: {
-        color: PDF_BLUE,
+      paymentTableHeader: {
+        color: PDF_MUTED,
         bold: true,
-        fontSize: 15,
+        fontSize: 7,
+        characterSpacing: 0.4,
       },
       sectionHeading: {
         color: PDF_DARK,

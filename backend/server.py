@@ -197,6 +197,7 @@ ProposalStatus = Literal[
 class ProposalSection(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     body: str = Field(default="", max_length=20000)
+    kind: Literal["text", "financial"] = "text"
 
     @field_validator("title")
     @classmethod
@@ -207,10 +208,25 @@ class ProposalSection(BaseModel):
         return value
 
 
+class ProposalPayment(BaseModel):
+    description: str = Field(min_length=1, max_length=200)
+    due_date: date
+    amount_cents: int = Field(ge=0)
+
+    @field_validator("description")
+    @classmethod
+    def payment_description_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("A descrição da parcela é obrigatória")
+        return value
+
+
 class ProposalContent(BaseModel):
-    sections: List[ProposalSection] = Field(default_factory=list, max_length=30)
+    sections: List[ProposalSection] = Field(default_factory=list, max_length=31)
     city: Optional[str] = Field(default=None, max_length=120)
     provider: Optional[ProviderSettings] = None
+    payment_schedule: List[ProposalPayment] = Field(default_factory=list, max_length=24)
 
 
 class ProposalCreate(BaseModel):
@@ -235,6 +251,14 @@ class ProposalCreate(BaseModel):
     def validity_must_not_precede_issue_date(self):
         if self.valid_until < self.issue_date:
             raise ValueError("A validade não pode ser anterior à emissão")
+        if (
+            self.content.payment_schedule
+            and sum(
+                payment.amount_cents
+                for payment in self.content.payment_schedule
+            ) != self.amount_cents
+        ):
+            raise ValueError("A soma das parcelas deve corresponder ao investimento total")
         return self
 
 
@@ -273,6 +297,16 @@ class ProposalUpdate(BaseModel):
             and self.valid_until < self.issue_date
         ):
             raise ValueError("A validade não pode ser anterior à emissão")
+        if (
+            self.content is not None
+            and self.amount_cents is not None
+            and self.content.payment_schedule
+            and sum(
+                payment.amount_cents
+                for payment in self.content.payment_schedule
+            ) != self.amount_cents
+        ):
+            raise ValueError("A soma das parcelas deve corresponder ao investimento total")
         return self
 
 
@@ -1531,6 +1565,21 @@ async def update_proposal(
         raise HTTPException(status_code=404, detail="Proposta não encontrada")
 
     update_data = data.model_dump(mode="json", exclude_unset=True)
+    amount_cents = update_data.get("amount_cents", proposal["amount_cents"])
+    content = update_data.get("content", proposal["content"])
+    payment_schedule = (
+        content.get("payment_schedule", [])
+        if isinstance(content, dict)
+        else []
+    )
+    if payment_schedule and sum(
+        payment["amount_cents"] for payment in payment_schedule
+    ) != amount_cents:
+        raise HTTPException(
+            status_code=422,
+            detail="A soma das parcelas deve corresponder ao investimento total",
+        )
+
     issue_date = update_data.get("issue_date", proposal["issue_date"])
     valid_until = update_data.get("valid_until", proposal["valid_until"])
     if date.fromisoformat(valid_until) < date.fromisoformat(issue_date):
