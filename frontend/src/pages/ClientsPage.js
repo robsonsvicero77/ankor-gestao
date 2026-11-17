@@ -67,7 +67,7 @@ export function ClientsPage() {
       <div className="mx-auto max-w-7xl space-y-6 selection:bg-brand-light selection:text-brand-primary" data-testid="clients-page">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary lg:text-3xl">Clientes</h1>
+            <h1 className="type-h1 text-text-primary">Clientes</h1>
             <p className="mt-1 text-sm text-text-secondary">
               Mantenha os dados de pessoas e empresas organizados para reutilizar no sistema.
             </p>
@@ -119,16 +119,16 @@ export function ClientsPage() {
             Carregando clientes...
           </div>
         ) : loadError ? (
-          <div className="rounded-xl border border-error/30 bg-error-background p-6 text-center">
+          <div className="rounded-lg border border-error/30 bg-error-background p-6 text-center">
             <p className="text-sm text-error" role="alert">{loadError}</p>
             <Button onClick={loadClients} variant="outline" className="mt-4 border-border text-text-secondary hover:bg-surface-alt">
               Tentar novamente
             </Button>
           </div>
         ) : filteredClients.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border px-5 py-14 text-center">
+          <div className="rounded-lg border border-dashed border-border px-4 py-12 text-center">
             <Users className="mx-auto h-8 w-8 text-text-secondary" />
-            <h2 className="mt-4 text-base font-semibold text-text-primary">
+            <h2 className="type-h2 mt-4 text-text-primary">
               {clients.length ? 'Nenhum cliente encontrado' : 'Sua lista de clientes está vazia'}
             </h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
@@ -147,17 +147,17 @@ export function ClientsPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[960px] text-left">
                 <thead className="border-b border-border bg-surface">
                   <tr className="text-xs font-medium uppercase tracking-wide text-text-secondary">
-                    <th scope="col" className="px-5 py-3">Cliente</th>
+                    <th scope="col" className="px-4 py-3">Cliente</th>
                     <th scope="col" className="px-4 py-3">Tipo</th>
                     <th scope="col" className="px-4 py-3">CPF/CNPJ</th>
                     <th scope="col" className="px-4 py-3">Contato</th>
                     <th scope="col" className="px-4 py-3">Localidade</th>
-                    <th scope="col" className="px-5 py-3 text-right">Ações</th>
+                    <th scope="col" className="px-4 py-3 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -165,7 +165,7 @@ export function ClientsPage() {
                     const PersonIcon = client.person_type === 'PJ' ? Building2 : UserRound;
                     return (
                       <tr key={client.id} className="transition-colors hover:bg-surface-alt/35">
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-4">
                           <span className="block max-w-xs truncate font-medium text-text-primary">{client.name}</span>
                           {client.trade_name && (
                             <span className="mt-1 block max-w-xs truncate text-xs text-text-secondary">{client.trade_name}</span>
@@ -194,7 +194,7 @@ export function ClientsPage() {
                         <td className="whitespace-nowrap px-4 py-4 text-sm text-text-secondary">
                           {[client.city, client.state].filter(Boolean).join(' / ') || '—'}
                         </td>
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-4">
                           <div className="flex justify-end">
                             <Button
                               variant="ghost"
@@ -214,7 +214,7 @@ export function ClientsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="border-t border-border px-5 py-3 text-xs text-text-secondary">
+            <div className="border-t border-border px-4 py-3 text-xs text-text-secondary">
               Exibindo {filteredClients.length} de {clients.length} clientes
             </div>
           </div>

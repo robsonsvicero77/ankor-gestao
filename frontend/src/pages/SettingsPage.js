@@ -91,7 +91,7 @@ function Field({ id, label, children, hint }) {
 
 function ToggleRow({ id, title, description, checked, onCheckedChange }) {
   return (
-    <div className="flex items-start justify-between gap-5 py-4">
+    <div className="flex items-start justify-between gap-4 py-4">
       <div className="min-w-0">
         <Label htmlFor={id} className="cursor-pointer text-sm font-medium text-text-primary">{title}</Label>
         <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-text-secondary">{description}</p>
@@ -386,7 +386,7 @@ export function SettingsPage() {
   if (loadError || !form) {
     return (
       <Layout>
-        <div className="mx-auto max-w-2xl rounded-xl border border-error/30 bg-error-background p-6 text-center">
+        <div className="mx-auto max-w-2xl rounded-lg border border-error/30 bg-error-background p-6 text-center">
           <CircleAlert className="mx-auto h-6 w-6 text-error" />
           <p className="mt-3 text-sm text-error" role="alert">{loadError || 'Configurações indisponíveis.'}</p>
           <Button
@@ -406,7 +406,7 @@ export function SettingsPage() {
     <Layout>
       <div className="mx-auto max-w-[1440px] space-y-6" data-testid="settings-page">
         <header className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-text-primary lg:text-3xl">Configurações</h1>
+          <h1 className="type-h1 text-text-primary">Configurações</h1>
           <p className="max-w-[65ch] text-sm leading-relaxed text-text-secondary">
             Gerencie seu perfil, os dados usados nos documentos e as preferências da sua conta.
           </p>
@@ -429,8 +429,8 @@ export function SettingsPage() {
           </div>
         )}
 
-        <div className="grid items-start gap-5 lg:grid-cols-[210px_minmax(0,1fr)_270px]">
-          <aside className="order-1 rounded-xl border border-border bg-surface p-4 lg:order-3">
+        <div className="grid items-start gap-4 lg:grid-cols-[210px_minmax(0,1fr)_270px]">
+          <aside className="order-1 rounded-lg border border-border bg-surface p-4 lg:order-3">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-light text-base font-semibold text-brand-primary">
                 {avatarUrl ? (
@@ -505,12 +505,12 @@ export function SettingsPage() {
             })}
           </nav>
 
-          <section key={activeSectionId} className="settings-panel-enter order-3 min-w-0 rounded-xl border border-border bg-surface p-5 sm:p-6 lg:order-2">
+          <section key={activeSectionId} className="settings-panel-enter order-3 min-w-0 rounded-lg border border-border bg-surface p-4 sm:p-6 lg:order-2">
             <div className="mb-6 flex items-start justify-between gap-4 border-b border-border pb-5">
               <div className="flex items-start gap-3">
                 <ActiveSectionIcon className="mt-0.5 h-5 w-5 text-brand-secondary" />
                 <div>
-                  <h2 className="text-lg font-semibold text-text-primary">{activeSection.label}</h2>
+                  <h2 className="type-h2 text-text-primary">{activeSection.label}</h2>
                   <p className="mt-1 text-sm leading-relaxed text-text-secondary">
                     {activeSection.id === 'profile' && 'Atualize sua identificação e foto de perfil.'}
                     {activeSection.id === 'professional' && 'Esses dados são reutilizados em novas propostas e contratos.'}
@@ -599,7 +599,7 @@ export function SettingsPage() {
             )}
 
             {activeSection.id === 'professional' && (
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field id="provider-display-name" label="Nome profissional">
                   <Input id="provider-display-name" value={form.provider.display_name} onChange={(event) => updateProvider('display_name', event.target.value)} maxLength={200} className="border-border bg-surface text-text-primary" />
                 </Field>
@@ -634,7 +634,7 @@ export function SettingsPage() {
             )}
 
             {activeSection.id === 'financial' && (
-              <div className="space-y-7">
+              <div className="space-y-8">
                 <Field id="settings-timezone" label="Fuso horário" hint="Usado para exibir datas e calcular vencimentos nos alertas.">
                   <select
                     id="settings-timezone"
@@ -664,7 +664,7 @@ export function SettingsPage() {
                   <div className="mb-4 flex items-start gap-3">
                     <Clock3 className="mt-0.5 h-4 w-4 text-text-secondary" />
                     <div>
-                      <h3 className="text-sm font-semibold text-text-primary">Saldo inicial</h3>
+                      <h3 className="type-h3 text-text-primary">Saldo inicial</h3>
                       <p className="mt-1 text-sm leading-relaxed text-text-secondary">
                         {balanceEditable
                           ? 'Pode ser alterado enquanto não houver outros lançamentos financeiros.'
@@ -739,7 +739,7 @@ export function SettingsPage() {
               <div className="space-y-8">
                 <form onSubmit={changeEmail} className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-semibold text-text-primary">Alterar e-mail de acesso</h3>
+                    <h3 className="type-h3 text-text-primary">Alterar e-mail de acesso</h3>
                     <p className="mt-1 text-sm text-text-secondary">E-mail atual: {email}</p>
                   </div>
                   <Field id="new-email" label="Novo e-mail">
@@ -761,7 +761,7 @@ export function SettingsPage() {
 
                 <form onSubmit={changePassword} className="space-y-4 border-t border-border pt-6">
                   <div>
-                    <h3 className="text-sm font-semibold text-text-primary">Alterar senha</h3>
+                    <h3 className="type-h3 text-text-primary">Alterar senha</h3>
                     <p className="mt-1 text-sm text-text-secondary">Use pelo menos 8 caracteres.</p>
                   </div>
                   <Field id="new-password" label="Nova senha">

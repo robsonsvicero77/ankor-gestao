@@ -135,7 +135,7 @@ export function ProposalsPage() {
       <div className="mx-auto max-w-7xl space-y-6 selection:bg-brand-light selection:text-brand-primary" data-testid="proposals-page">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary lg:text-3xl">Propostas</h1>
+            <h1 className="type-h1 text-text-primary">Propostas</h1>
             <p className="mt-1 text-sm text-text-secondary">
               Crie, acompanhe e mantenha suas propostas comerciais em um só lugar.
             </p>
@@ -194,16 +194,16 @@ export function ProposalsPage() {
             Carregando propostas...
           </div>
         ) : loadError ? (
-          <div className="rounded-xl border border-error/30 bg-error-background p-6 text-center">
+          <div className="rounded-lg border border-error/30 bg-error-background p-6 text-center">
             <p className="text-sm text-error" role="alert">{loadError}</p>
             <Button onClick={loadProposals} variant="outline" className="mt-4 border-border text-text-secondary hover:bg-surface-alt">
               Tentar novamente
             </Button>
           </div>
         ) : filteredProposals.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border px-5 py-14 text-center">
+          <div className="rounded-lg border border-dashed border-border px-4 py-12 text-center">
             <FileText className="mx-auto h-8 w-8 text-text-secondary" />
-            <h2 className="mt-4 text-base font-semibold text-text-primary">
+            <h2 className="type-h2 mt-4 text-text-primary">
               {proposals.length ? 'Nenhuma proposta encontrada' : 'Sua lista de propostas está vazia'}
             </h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
@@ -222,22 +222,22 @@ export function ProposalsPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[850px] text-left">
                 <thead className="border-b border-border bg-surface">
                   <tr className="text-xs font-medium uppercase tracking-wide text-text-secondary">
-                    <th scope="col" className="px-5 py-3 text-text-secondary">Proposta / cliente</th>
+                    <th scope="col" className="px-4 py-3 text-text-secondary">Proposta / cliente</th>
                     <th scope="col" className="px-4 py-3 text-text-secondary">Investimento</th>
                     <th scope="col" className="px-4 py-3 text-text-secondary">Validade</th>
                     <th scope="col" className="px-4 py-3 text-text-secondary">Status</th>
-                    <th scope="col" className="px-5 py-3 text-right text-text-secondary">Ações</th>
+                    <th scope="col" className="px-4 py-3 text-right text-text-secondary">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredProposals.map((proposal) => (
                     <tr key={proposal.id} className="transition-colors hover:bg-surface-alt/35">
-                      <td className="px-5 py-4">
+                      <td className="px-4 py-4">
                         <button
                           type="button"
                           onClick={() => navigate(`/proposals/${proposal.id}/edit`)}
@@ -268,7 +268,7 @@ export function ProposalsPage() {
                           onChange={(nextStatus) => handleStatusChange(proposal, nextStatus)}
                         />
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-4 py-4">
                         <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
@@ -299,7 +299,7 @@ export function ProposalsPage() {
                 </tbody>
               </table>
             </div>
-            <div className="border-t border-border px-5 py-3 text-xs text-text-secondary">
+            <div className="border-t border-border px-4 py-3 text-xs text-text-secondary">
               Exibindo {filteredProposals.length} de {proposals.length} propostas
             </div>
           </div>

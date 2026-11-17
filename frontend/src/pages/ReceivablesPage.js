@@ -237,7 +237,7 @@ export function ReceivablesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">Receitas a Receber</h1>
+            <h1 className="type-h1 text-text-primary">Receitas a Receber</h1>
             <p className="text-text-secondary text-sm mt-1">Gerencie suas receitas pendentes</p>
           </div>
           <Button

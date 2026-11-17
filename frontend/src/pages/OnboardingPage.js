@@ -53,7 +53,7 @@ export function OnboardingPage() {
             <div className="w-16 h-16 rounded-full bg-success-background flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="h-8 w-8 text-success" />
             </div>
-            <h2 className="text-2xl font-bold text-text-primary mb-2">Tudo pronto!</h2>
+            <h2 className="type-h2 text-text-primary mb-2">Tudo pronto!</h2>
             <p className="text-text-secondary mb-4">
               Seu saldo inicial foi configurado. Redirecionando para o dashboard...
             </p>
@@ -73,7 +73,7 @@ export function OnboardingPage() {
           <div className="w-12 h-12 rounded-full bg-success-background flex items-center justify-center mx-auto mb-4">
             <Wallet className="h-6 w-6 text-success" />
           </div>
-          <CardTitle className="text-2xl text-text-primary">Qual é o seu saldo atual?</CardTitle>
+          <CardTitle className="text-h3 text-text-primary">Qual é o seu saldo atual?</CardTitle>
           <CardDescription className="text-text-secondary">
             Informe o saldo que você tem disponível hoje para começarmos a monitorar suas finanças.
           </CardDescription>

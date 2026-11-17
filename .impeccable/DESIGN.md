@@ -41,7 +41,38 @@ The canonical values live in `frontend/src/index.css` as CSS variables and are e
 - Preserve explicit labels/icons alongside feedback colors; never communicate status by color alone.
 
 ## Typography and interaction
-Use Chivo for headings, the system sans-serif stack for interface text, and JetBrains Mono for monetary/tabular values. Inputs use white surfaces and the focus token. Buttons, menus, dialogs, tables, loading indicators, chart series, and PDF exports share the same semantic tokens.
+Use DM Sans for headings and emphasis, Inter for interface text, and JetBrains Mono for monetary/tabular values. The global type utilities are `type-display`, `type-h1` through `type-h4`, and `type-body-lg`, `type-body`, `type-body-sm`, and `type-caption`. Display and page headings scale down on narrow screens.
+
+| Style | Size | Weight |
+|---|---:|---:|
+| Display | 48px | 700 |
+| H1 | 36px | 700 |
+| H2 | 30px | 700 |
+| H3 | 24px | 600 |
+| H4 | 20px | 600 |
+| Body Large | 18px | 400 |
+| Body | 16px | 400 |
+| Body Small | 14px | 400 |
+| Caption | 12px | 400 |
+
+## Spacing, shape, and elevation
+Use the CSS spacing tokens `--space-1`, `--space-2`, `--space-3`, `--space-4`, `--space-6`, `--space-8`, `--space-12`, and `--space-16` (4, 8, 12, 16, 24, 32, 48, and 64px). Prefer these points for section gaps, card padding, form rhythm, and control spacing.
+
+| Token | Value |
+|---|---:|
+| Radius Small | 6px |
+| Radius Medium | 10px |
+| Radius Large | 16px |
+| Radius XL | 24px |
+| Shadow Small | subtle burgundy tinted elevation |
+| Shadow Medium | subtle burgundy tinted elevation |
+| Shadow Large | subtle burgundy tinted elevation |
+
+## Component patterns
+Shared primitives in `frontend/src/components/ui` are the source of truth. Buttons use the primary semantic token and shared focus ring; inputs and selects use white surfaces, medium radius, and a 40px control height; cards use large radius and small elevation; dialogs, sheets, dropdowns, and popovers use shared surface, radius, and shadow tokens. Badges, alerts, tables, tabs, navigation, and pagination use semantic color utilities. Extend a shared primitive when a pattern changes instead of creating page-specific styles.
+
+## Responsive layout
+Use the existing Tailwind breakpoints and fluid heading utilities. Preserve compact controls and readable line lengths on phones, progressive grid columns on tablet and desktop, and consistent section/card/form gaps at every breakpoint. Avoid fixed content widths where a max-width container or `w-full` can adapt naturally.
 
 ## Theme
 The product uses the light theme. Tailwind's existing class-based dark-mode compatibility is retained, but no separate dark palette or theme switch is defined.

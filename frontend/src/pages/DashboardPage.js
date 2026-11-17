@@ -135,7 +135,7 @@ export function DashboardPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">Dashboard</h1>
+            <h1 className="type-h1 text-text-primary">Dashboard</h1>
             <p className="text-text-secondary text-sm mt-1">Visão geral das suas finanças</p>
           </div>
           
@@ -242,7 +242,7 @@ export function DashboardPage() {
         {alertsEnabled && (
           <Card className="bg-surface border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg text-text-primary">
+              <CardTitle className="flex items-center gap-2 text-h4 text-text-primary">
                 <BellRing className="h-5 w-5 text-text-primary" />
                 Alertas de vencimento
               </CardTitle>
@@ -288,7 +288,7 @@ export function DashboardPage() {
         {dashboard?.projection_chart && dashboard.projection_chart.length > 0 && (
           <Card className="bg-surface border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-text-primary flex items-center gap-2">
+              <CardTitle className="text-h4 text-text-primary flex items-center gap-2">
                 <LineChartIcon className="h-5 w-5 text-text-secondary" />
                 Projeção de Saldo (30 dias)
               </CardTitle>
@@ -375,7 +375,7 @@ export function DashboardPage() {
         <Card className="bg-surface border-border">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg text-text-primary flex items-center gap-2">
+              <CardTitle className="text-h4 text-text-primary flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-text-secondary" />
                 Próximos 7 dias
               </CardTitle>

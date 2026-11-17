@@ -152,7 +152,7 @@ export function ClientEditorPage() {
   if (loadError) {
     return (
       <Layout>
-        <div className="mx-auto max-w-4xl rounded-xl border border-error/30 bg-error-background p-6 text-center">
+        <div className="mx-auto max-w-4xl rounded-lg border border-error/30 bg-error-background p-6 text-center">
           <p className="text-sm text-error" role="alert">{loadError}</p>
           <div className="mt-4 flex justify-center gap-3">
             <Button onClick={() => navigate('/clients')} variant="outline" className="border-border text-text-secondary hover:bg-surface-alt">
@@ -180,7 +180,7 @@ export function ClientEditorPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar aos clientes
           </Button>
-          <h1 className="text-2xl font-bold text-text-primary lg:text-3xl">
+          <h1 className="type-h1 text-text-primary">
             {isEditing ? 'Editar cliente' : 'Novo cliente'}
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
@@ -195,9 +195,9 @@ export function ClientEditorPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          <section className="space-y-5 rounded-xl border border-border bg-surface p-5 sm:p-6">
+          <section className="space-y-6 rounded-lg border border-border bg-surface p-4 sm:p-6">
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Identificação</h2>
+              <h2 className="type-h2 text-text-primary">Identificação</h2>
               <p className="mt-1 text-sm text-text-secondary">
                 CPF ou CNPJ é obrigatório e será validado antes de salvar.
               </p>
@@ -264,9 +264,9 @@ export function ClientEditorPage() {
             </div>
           </section>
 
-          <section className="space-y-5 border-t border-border pt-6">
+          <section className="space-y-6 border-t border-border pt-6">
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Contato</h2>
+              <h2 className="type-h2 text-text-primary">Contato</h2>
               <p className="mt-1 text-sm text-text-secondary">Use os canais principais para falar com este cliente.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -311,9 +311,9 @@ export function ClientEditorPage() {
             </div>
           </section>
 
-          <section className="space-y-5 border-t border-border pt-6">
+          <section className="space-y-6 border-t border-border pt-6">
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Endereço</h2>
+              <h2 className="type-h2 text-text-primary">Endereço</h2>
               <p className="mt-1 text-sm text-text-secondary">Todos os campos de endereço são opcionais.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-6">
@@ -400,7 +400,7 @@ export function ClientEditorPage() {
 
           <section className="space-y-4 border-t border-border pt-6">
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Observações</h2>
+              <h2 className="type-h2 text-text-primary">Observações</h2>
               <p className="mt-1 text-sm text-text-secondary">Anotações internas sobre o relacionamento com o cliente.</p>
             </div>
             <div className="space-y-2">

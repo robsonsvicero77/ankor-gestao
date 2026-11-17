@@ -443,7 +443,7 @@ export function ContractEditorPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar aos contratos
             </Button>
-            <h1 className="text-2xl font-bold text-text-primary lg:text-3xl">
+            <h1 className="type-h1 text-text-primary">
               {isEditing ? 'Editar contrato' : 'Novo contrato'}
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-text-secondary">
@@ -465,7 +465,7 @@ export function ContractEditorPage() {
         </header>
 
         {loadError && (
-          <div className="rounded-xl border border-error/30 bg-error-background p-6 text-center">
+          <div className="rounded-lg border border-error/30 bg-error-background p-6 text-center">
             <p className="text-sm text-error" role="alert">{loadError}</p>
             <Button
               type="button"
@@ -490,8 +490,8 @@ export function ContractEditorPage() {
         )}
 
         {!loadError && !clients.length ? (
-          <section className="rounded-xl border border-dashed border-border px-5 py-12 text-center">
-            <h2 className="text-lg font-semibold text-text-primary">Cadastre um cliente primeiro</h2>
+          <section className="rounded-lg border border-dashed border-border px-4 py-12 text-center">
+            <h2 className="type-h2 text-text-primary">Cadastre um cliente primeiro</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
               Os dados da parte contratante são preenchidos a partir do cadastro de clientes.
             </p>
@@ -506,10 +506,10 @@ export function ContractEditorPage() {
         ) : null}
 
         {!loadError && clients.length > 0 && (
-          <form onSubmit={handleSubmit} className="space-y-7">
-            <section className="space-y-5 rounded-xl border border-border bg-surface p-5 sm:p-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <section className="space-y-6 rounded-lg border border-border bg-surface p-4 sm:p-6">
               <div>
-                <h2 className="text-lg font-semibold text-text-primary">Identificação e cliente</h2>
+                <h2 className="type-h2 text-text-primary">Identificação e cliente</h2>
                 <p className="mt-1 text-sm text-text-secondary">Os dados do cliente são copiados do cadastro para este contrato.</p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -615,9 +615,9 @@ export function ContractEditorPage() {
               </div>
             </section>
 
-            <section className="space-y-5 rounded-xl border border-border bg-surface p-5 sm:p-6">
+            <section className="space-y-6 rounded-lg border border-border bg-surface p-4 sm:p-6">
               <div>
-                <h2 className="text-lg font-semibold text-text-primary">Serviços e escopo</h2>
+                <h2 className="type-h2 text-text-primary">Serviços e escopo</h2>
                 <p className="mt-1 text-sm text-text-secondary">Selecione uma ou mais categorias e descreva o trabalho contratado.</p>
               </div>
               <fieldset className="space-y-3">
@@ -713,10 +713,10 @@ export function ContractEditorPage() {
               </Field>
             </section>
 
-            <section className="space-y-5 rounded-xl border border-success/30 bg-surface p-5 sm:p-6">
+            <section className="space-y-6 rounded-lg border border-success/30 bg-surface p-4 sm:p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-text-primary">Agenda de pagamentos</h2>
+                  <h2 className="type-h2 text-text-primary">Agenda de pagamentos</h2>
                   <p className="mt-1 text-sm text-text-secondary">Os valores das parcelas precisam somar o total do contrato.</p>
                 </div>
                 <Button
@@ -836,10 +836,10 @@ export function ContractEditorPage() {
               </div>
             </section>
 
-            <section className="space-y-5">
+            <section className="space-y-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-text-primary">Cláusulas e condições</h2>
+                  <h2 className="type-h2 text-text-primary">Cláusulas e condições</h2>
                   <p className="mt-1 max-w-2xl text-sm text-text-secondary">
                     Os textos do modelo são sugestões editáveis. Revise as condições antes de enviar o contrato.
                   </p>
@@ -902,9 +902,9 @@ export function ContractEditorPage() {
               ))}
             </section>
 
-            <section className="space-y-5 rounded-xl border border-border bg-surface p-5 sm:p-6">
+            <section className="space-y-6 rounded-lg border border-border bg-surface p-4 sm:p-6">
               <div>
-                <h2 className="text-lg font-semibold text-text-primary">Dados da contratada</h2>
+                <h2 className="type-h2 text-text-primary">Dados da contratada</h2>
                 <p className="mt-1 text-sm text-text-secondary">Valores iniciais copiados do modelo e editáveis para este contrato.</p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">

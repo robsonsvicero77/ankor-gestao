@@ -129,7 +129,7 @@ export function LedgerPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">Histórico (Ledger)</h1>
+            <h1 className="type-h1 text-text-primary">Histórico (Ledger)</h1>
             <p className="text-text-secondary text-sm mt-1">
               Registro completo de todas as movimentações financeiras
             </p>
@@ -283,7 +283,7 @@ export function LedgerPage() {
         {/* Ledger List */}
         <Card className="bg-surface border-border">
           <CardHeader>
-            <CardTitle className="text-lg text-text-primary flex items-center gap-2">
+            <CardTitle className="text-h4 text-text-primary flex items-center gap-2">
               <BookOpen className="h-5 w-5 text-text-secondary" />
               Movimentações
               {entries.length > 0 && (

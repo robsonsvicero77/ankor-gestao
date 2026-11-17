@@ -59,7 +59,7 @@ export function RegisterPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-overlay via-transparent to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-overlay/80 via-transparent to-transparent" />
         <div className="relative z-10 flex flex-col justify-end p-12">
-          <h2 className="text-4xl font-bold text-text-inverse mb-4">
+          <h2 className="type-display text-text-inverse mb-4">
             Comece a organizar<br />suas finanças hoje
           </h2>
           <p className="text-text-inverse/85 text-lg max-w-md">
@@ -75,10 +75,10 @@ export function RegisterPage() {
           <CardHeader className="space-y-1">
             <div className="mb-4 lg:hidden">
               <h1 className="text-2xl font-bold text-text-primary">
-                Ankor<span className="text-brand-primary">Gestão</span>
+                <span className="text-brand-accent">Ankor</span><span className="text-brand-primary">Gestão</span>
               </h1>
             </div>
-            <CardTitle className="text-2xl text-text-primary">Criar conta</CardTitle>
+            <CardTitle className="text-h3 text-text-primary">Criar conta</CardTitle>
             <CardDescription className="text-text-secondary">
               {emailConfirmationRequired
                 ? 'Confirme seu e-mail para acessar sua conta'

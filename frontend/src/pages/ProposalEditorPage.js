@@ -422,7 +422,7 @@ export function ProposalEditorPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar às propostas
             </Button>
-            <h1 className="text-2xl font-bold text-text-primary lg:text-3xl">
+            <h1 className="type-h1 text-text-primary">
               {isEditing ? 'Editar proposta' : 'Nova proposta'}
             </h1>
             <p className="mt-1 text-sm text-text-secondary">
@@ -455,9 +455,9 @@ export function ProposalEditorPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          <section className="space-y-5 rounded-xl border border-border bg-surface p-5 sm:p-6">
+          <section className="space-y-6 rounded-lg border border-border bg-surface p-4 sm:p-6">
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">Identificação e condições</h2>
+              <h2 className="type-h2 text-text-primary">Identificação e condições</h2>
               <p className="mt-1 text-sm text-text-secondary">Esses dados aparecem no cabeçalho da proposta.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -546,10 +546,10 @@ export function ProposalEditorPage() {
             </div>
           </section>
 
-          <section className="space-y-5">
+          <section className="space-y-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-text-primary">Conteúdo da proposta</h2>
+                <h2 className="type-h2 text-text-primary">Conteúdo da proposta</h2>
                 <p className="mt-1 text-sm text-text-secondary">
                   As seções seguem o modelo e podem ser reordenadas; a seção financeira é fixa.
                 </p>
@@ -623,7 +623,7 @@ export function ProposalEditorPage() {
                   className="border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
                 />
                 {section.kind === 'financial' ? (
-                  <div className="space-y-5 rounded-xl border border-success/30 bg-surface p-5 sm:p-6">
+                  <div className="space-y-6 rounded-lg border border-success/30 bg-surface p-4 sm:p-6">
                     <div className="grid gap-4 sm:grid-cols-2 sm:items-end">
                       <Field id="proposal-amount" label="Investimento total (R$) *">
                         <Input
@@ -647,7 +647,7 @@ export function ProposalEditorPage() {
                     <div className="space-y-4 border-t border-border pt-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <h3 className="text-base font-semibold text-text-primary">Formas de pagamento</h3>
+                          <h3 className="type-h3 text-text-primary">Formas de pagamento</h3>
                           <p className="mt-1 text-sm text-text-secondary">
                             Descreva cada parcela e informe seu vencimento previsto.
                           </p>

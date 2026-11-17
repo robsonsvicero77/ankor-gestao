@@ -150,7 +150,7 @@ export function ContractsPage() {
       <div className="mx-auto max-w-7xl space-y-6 selection:bg-brand-light selection:text-brand-primary" data-testid="contracts-page">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary lg:text-3xl">Contratos</h1>
+            <h1 className="type-h1 text-text-primary">Contratos</h1>
             <p className="mt-1 max-w-2xl text-sm text-text-secondary">
               Organize escopo, parcelas e andamento dos serviços contratados.
             </p>
@@ -216,16 +216,16 @@ export function ContractsPage() {
             Carregando contratos...
           </div>
         ) : loadError ? (
-          <div className="rounded-xl border border-error/30 bg-error-background p-6 text-center">
+          <div className="rounded-lg border border-error/30 bg-error-background p-6 text-center">
             <p className="text-sm text-error" role="alert">{loadError}</p>
             <Button onClick={loadContracts} variant="outline" className="mt-4 border-border text-text-secondary hover:bg-surface-alt">
               Tentar novamente
             </Button>
           </div>
         ) : filteredContracts.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border px-5 py-14 text-center">
+          <div className="rounded-lg border border-dashed border-border px-4 py-12 text-center">
             <FileText className="mx-auto h-8 w-8 text-text-secondary" />
-            <h2 className="mt-4 text-base font-semibold text-text-primary">
+            <h2 className="type-h2 mt-4 text-text-primary">
               {contracts.length ? 'Nenhum contrato encontrado' : 'Sua lista de contratos está vazia'}
             </h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
@@ -244,17 +244,17 @@ export function ContractsPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[1060px] text-left">
                 <thead className="border-b border-border bg-surface">
                   <tr className="text-xs font-medium uppercase tracking-wide text-text-secondary">
-                    <th scope="col" className="px-5 py-3">Contrato / cliente</th>
+                    <th scope="col" className="px-4 py-3">Contrato / cliente</th>
                     <th scope="col" className="px-4 py-3">Serviço</th>
                     <th scope="col" className="px-4 py-3 text-right">Valor total</th>
                     <th scope="col" className="px-4 py-3">Próximo vencimento</th>
                     <th scope="col" className="px-4 py-3">Status</th>
-                    <th scope="col" className="px-5 py-3 text-right">Ações</th>
+                    <th scope="col" className="px-4 py-3 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -262,7 +262,7 @@ export function ContractsPage() {
                     const nextPayment = getNextScheduledPayment(contract);
                     return (
                       <tr key={contract.id} className="transition-colors hover:bg-surface-alt/35">
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-4">
                           <button
                             type="button"
                             onClick={() => openContract(contract)}
@@ -300,7 +300,7 @@ export function ContractsPage() {
                             onChange={(nextStatus) => handleStatusChange(contract, nextStatus)}
                           />
                         </td>
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-4">
                           <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"
@@ -393,7 +393,7 @@ export function ContractsPage() {
               })}
             </div>
 
-            <div className="border-t border-border px-5 py-3 text-xs text-text-secondary">
+            <div className="border-t border-border px-4 py-3 text-xs text-text-secondary">
               Exibindo {filteredContracts.length} de {contracts.length} contratos
             </div>
           </div>
