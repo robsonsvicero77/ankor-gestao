@@ -1,7 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDays, Download, FileText, Loader2, Plus, Search, UserRound } from 'lucide-react';
+import { CalendarDays, Download, FileText, Loader2, Plus, Search, Trash2, UserRound } from 'lucide-react';
 import { Layout } from '../components/Layout';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { proposalsApi } from '../lib/api';
@@ -67,6 +76,9 @@ export function ProposalsPage() {
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [downloadingPdf, setDownloadingPdf] = useState(null);
   const [actionError, setActionError] = useState('');
+  const [proposalToDelete, setProposalToDelete] = useState(null);
+  const [deletingProposalId, setDeletingProposalId] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   const loadProposals = useCallback(async () => {
     setLoading(true);
@@ -127,6 +139,21 @@ export function ProposalsPage() {
       setActionError(getErrorMessage(error, 'Não foi possível gerar o PDF.'));
     } finally {
       setDownloadingPdf(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!proposalToDelete) return;
+    setDeletingProposalId(proposalToDelete.id);
+    setDeleteError('');
+    try {
+      await proposalsApi.delete(proposalToDelete.id);
+      setProposals((current) => current.filter((item) => item.id !== proposalToDelete.id));
+      setProposalToDelete(null);
+    } catch (error) {
+      setDeleteError(getErrorMessage(error, 'Não foi possível excluir a proposta.'));
+    } finally {
+      setDeletingProposalId(null);
     }
   };
 
@@ -264,7 +291,7 @@ export function ProposalsPage() {
                         <StatusSelect
                           value={proposal.status}
                           proposalTitle={proposal.title}
-                          busy={updatingStatus === proposal.id}
+                          busy={updatingStatus === proposal.id || deletingProposalId === proposal.id}
                           onChange={(nextStatus) => handleStatusChange(proposal, nextStatus)}
                         />
                       </td>
@@ -274,7 +301,7 @@ export function ProposalsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDownload(proposal)}
-                            disabled={downloadingPdf === proposal.id}
+                            disabled={downloadingPdf === proposal.id || deletingProposalId === proposal.id}
                             aria-label={`Baixar PDF de ${proposal.title}`}
                             className="text-text-secondary hover:bg-surface-alt hover:text-text-primary"
                           >
@@ -287,10 +314,27 @@ export function ProposalsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => navigate(`/proposals/${proposal.id}/edit`)}
+                            disabled={deletingProposalId === proposal.id}
                             aria-label={`Editar ${proposal.title}`}
                             className="text-text-secondary hover:bg-surface-alt hover:text-text-primary"
                           >
                             Editar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setProposalToDelete(proposal);
+                              setDeleteError('');
+                              setActionError('');
+                            }}
+                            disabled={deletingProposalId === proposal.id}
+                            aria-label={`Excluir ${proposal.title}`}
+                            className="text-error hover:bg-error-background hover:text-error"
+                          >
+                            {deletingProposalId === proposal.id
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <Trash2 className="h-4 w-4" />}
                           </Button>
                         </div>
                       </td>
@@ -305,6 +349,48 @@ export function ProposalsPage() {
           </div>
         )}
       </div>
+      <AlertDialog
+        open={Boolean(proposalToDelete)}
+        onOpenChange={(open) => {
+          if (!open && !deletingProposalId) {
+            setProposalToDelete(null);
+            setDeleteError('');
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir proposta permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {proposalToDelete && (
+                <>
+                  A proposta <strong>{proposalToDelete.title}</strong> será removida permanentemente.
+                  Esta ação não pode ser desfeita.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError && (
+            <p role="alert" className="text-sm text-error">{deleteError}</p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={Boolean(deletingProposalId)}>
+              Cancelar
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              onClick={handleDelete}
+              disabled={Boolean(deletingProposalId)}
+              className="bg-error text-white hover:bg-error/90"
+            >
+              {deletingProposalId
+                ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                : <Trash2 className="mr-2 h-4 w-4" />}
+              Excluir proposta
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }

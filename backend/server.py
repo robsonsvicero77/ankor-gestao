@@ -1688,6 +1688,20 @@ async def get_proposal(proposal_id: str, current_user: dict = Depends(get_curren
     return ProposalResponse(**proposal)
 
 
+@api_router.delete("/proposals/{proposal_id}")
+async def delete_proposal(
+    proposal_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    deleted = await database.delete_one(
+        "proposals",
+        {"id": proposal_id, "tenant_id": current_user["tenant_id"]},
+    )
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Proposta não encontrada")
+    return {"message": "Proposta excluída com sucesso"}
+
+
 @api_router.put("/proposals/{proposal_id}", response_model=ProposalResponse)
 async def update_proposal(
     proposal_id: str,

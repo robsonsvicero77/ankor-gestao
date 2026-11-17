@@ -171,6 +171,51 @@ def test_get_proposal_returns_not_found_outside_tenant(monkeypatch):
     asyncio.run(run())
 
 
+def test_delete_proposal_is_scoped_to_authenticated_tenant(monkeypatch):
+    tenant_id = str(uuid.uuid4())
+    proposal_id = str(uuid.uuid4())
+    calls = []
+
+    async def delete_one(table, filters):
+        calls.append((table, filters))
+        return True
+
+    monkeypatch.setattr(server.database, "delete_one", delete_one)
+
+    result = asyncio.run(
+        server.delete_proposal(proposal_id, {"tenant_id": tenant_id})
+    )
+
+    assert calls == [(
+        "proposals",
+        {"id": proposal_id, "tenant_id": tenant_id},
+    )]
+    assert result == {"message": "Proposta excluída com sucesso"}
+
+
+def test_delete_proposal_returns_not_found_for_other_tenant(monkeypatch):
+    tenant_id = str(uuid.uuid4())
+    proposal_id = str(uuid.uuid4())
+    calls = []
+
+    async def delete_one(table, filters):
+        calls.append((table, filters))
+        return False
+
+    monkeypatch.setattr(server.database, "delete_one", delete_one)
+
+    async def run():
+        with pytest.raises(HTTPException) as error:
+            await server.delete_proposal(proposal_id, {"tenant_id": tenant_id})
+        assert error.value.status_code == 404
+
+    asyncio.run(run())
+    assert calls == [(
+        "proposals",
+        {"id": proposal_id, "tenant_id": tenant_id},
+    )]
+
+
 def test_update_rejects_validity_before_existing_issue_date(monkeypatch):
     tenant_id = str(uuid.uuid4())
     proposal = make_proposal(tenant_id)

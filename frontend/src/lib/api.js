@@ -108,6 +108,7 @@ export const proposalsApi = {
   get: (id) => api.get(`/proposals/${id}`),
   create: (data) => api.post('/proposals', data),
   update: (id, data) => api.put(`/proposals/${id}`, data),
+  delete: (id) => api.delete(`/proposals/${id}`),
   updateStatus: (id, status) => api.patch(`/proposals/${id}/status`, { status }),
 };
 
