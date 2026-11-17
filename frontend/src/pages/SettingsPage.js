@@ -82,9 +82,9 @@ function amountInputToCents(value) {
 function Field({ id, label, children, hint }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-sm text-zinc-300">{label}</Label>
+      <Label htmlFor={id} className="text-sm text-text-secondary">{label}</Label>
       {children}
-      {hint && <p className="text-xs leading-relaxed text-zinc-400">{hint}</p>}
+      {hint && <p className="text-xs leading-relaxed text-text-secondary">{hint}</p>}
     </div>
   );
 }
@@ -93,15 +93,15 @@ function ToggleRow({ id, title, description, checked, onCheckedChange }) {
   return (
     <div className="flex items-start justify-between gap-5 py-4">
       <div className="min-w-0">
-        <Label htmlFor={id} className="cursor-pointer text-sm font-medium text-zinc-100">{title}</Label>
-        <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-zinc-400">{description}</p>
+        <Label htmlFor={id} className="cursor-pointer text-sm font-medium text-text-primary">{title}</Label>
+        <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-text-secondary">{description}</p>
       </div>
       <Switch
         id={id}
         checked={checked}
         onCheckedChange={onCheckedChange}
         aria-label={title}
-        className="mt-0.5 data-[state=checked]:bg-emerald-600"
+        className="mt-0.5 data-[state=checked]:bg-brand-primary"
       />
     </div>
   );
@@ -375,8 +375,8 @@ export function SettingsPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex min-h-[50vh] items-center justify-center text-zinc-300" role="status">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin text-emerald-400" />
+        <div className="flex min-h-[50vh] items-center justify-center text-text-secondary" role="status">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-brand-primary" />
           Carregando configurações...
         </div>
       </Layout>
@@ -386,14 +386,14 @@ export function SettingsPage() {
   if (loadError || !form) {
     return (
       <Layout>
-        <div className="mx-auto max-w-2xl rounded-xl border border-rose-500/30 bg-[#18181b] p-6 text-center">
-          <CircleAlert className="mx-auto h-6 w-6 text-rose-300" />
-          <p className="mt-3 text-sm text-rose-200" role="alert">{loadError || 'Configurações indisponíveis.'}</p>
+        <div className="mx-auto max-w-2xl rounded-xl border border-error/30 bg-error-background p-6 text-center">
+          <CircleAlert className="mx-auto h-6 w-6 text-error" />
+          <p className="mt-3 text-sm text-error" role="alert">{loadError || 'Configurações indisponíveis.'}</p>
           <Button
             type="button"
             onClick={loadSettings}
             variant="outline"
-            className="mt-5 border-zinc-600 text-zinc-100 hover:bg-zinc-800"
+            className="mt-5 border-border-strong text-text-primary hover:bg-surface-alt"
           >
             Tentar novamente
           </Button>
@@ -406,8 +406,8 @@ export function SettingsPage() {
     <Layout>
       <div className="mx-auto max-w-[1440px] space-y-6" data-testid="settings-page">
         <header className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-white lg:text-3xl">Configurações</h1>
-          <p className="max-w-[65ch] text-sm leading-relaxed text-zinc-300">
+          <h1 className="text-2xl font-semibold tracking-tight text-text-primary lg:text-3xl">Configurações</h1>
+          <p className="max-w-[65ch] text-sm leading-relaxed text-text-secondary">
             Gerencie seu perfil, os dados usados nos documentos e as preferências da sua conta.
           </p>
         </header>
@@ -416,8 +416,8 @@ export function SettingsPage() {
           <div
             className={`flex items-start gap-2 rounded-lg border px-4 py-3 text-sm ${
               message.type === 'success'
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100'
-                : 'border-rose-500/30 bg-rose-500/10 text-rose-100'
+                ? 'border-success/30 bg-success-background text-success'
+                : 'border-error/30 bg-error-background text-error'
             }`}
             role={message.type === 'error' ? 'alert' : 'status'}
             aria-live="polite"
@@ -430,9 +430,9 @@ export function SettingsPage() {
         )}
 
         <div className="grid items-start gap-5 lg:grid-cols-[210px_minmax(0,1fr)_270px]">
-          <aside className="order-1 rounded-xl border border-zinc-800 bg-[#18181b] p-4 lg:order-3">
+          <aside className="order-1 rounded-xl border border-border bg-surface p-4 lg:order-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-500/15 text-base font-semibold text-emerald-200">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-light text-base font-semibold text-brand-primary">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
@@ -440,37 +440,37 @@ export function SettingsPage() {
                 )}
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">{form.name || 'Seu perfil'}</p>
-                <p className="truncate text-xs text-zinc-300">{email}</p>
+                <p className="truncate text-sm font-semibold text-text-primary">{form.name || 'Seu perfil'}</p>
+                <p className="truncate text-xs text-text-secondary">{email}</p>
               </div>
             </div>
-            <div className="my-4 h-px bg-zinc-700" />
+            <div className="my-4 h-px bg-border" />
             <dl className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-zinc-300">Moeda</dt>
-                <dd className="font-medium text-zinc-100">BRL · R$</dd>
+                <dt className="text-text-secondary">Moeda</dt>
+                <dd className="font-medium text-text-primary">BRL · R$</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-zinc-300">Dados profissionais</dt>
-                <dd className="font-medium text-zinc-100">
+                <dt className="text-text-secondary">Dados profissionais</dt>
+                <dd className="font-medium text-text-primary">
                   {form.provider.display_name.trim() ? 'Configurados' : 'Pendentes'}
                 </dd>
               </div>
             </dl>
-            <div className="mt-4 rounded-lg bg-zinc-900/80 px-3 py-2.5">
-              <p className="text-xs text-zinc-300">Saldo inicial</p>
-              <p className="mt-1 tabular-nums text-sm font-semibold text-white">
+            <div className="mt-4 rounded-lg bg-surface-alt px-3 py-2.5">
+              <p className="text-xs text-text-secondary">Saldo inicial</p>
+              <p className="mt-1 tabular-nums text-sm font-semibold text-text-primary">
                 {initialBalanceCents === null ? 'Não definido' : formatCurrency(initialBalanceCents)}
               </p>
             </div>
-            <p className="mt-3 text-xs text-zinc-400">
+            <p className="mt-3 text-xs text-text-secondary">
               {dirty ? 'Há alterações ainda não salvas.' : 'Tudo salvo nesta sessão.'}
             </p>
             <Button
               type="button"
               onClick={saveSettings}
               disabled={!dirty || saving}
-              className="mt-4 w-full bg-emerald-600 text-white hover:bg-emerald-700"
+              className="mt-4 w-full bg-brand-primary text-text-inverse hover:bg-brand-hover"
             >
               {saving
                 ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -492,10 +492,10 @@ export function SettingsPage() {
                   type="button"
                   aria-current={selected ? 'page' : undefined}
                   onClick={() => setActiveSectionId(section.id)}
-                  className={`inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus ${
                     selected
-                      ? 'bg-emerald-500/15 font-medium text-emerald-100'
-                      : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                      ? 'bg-brand-light font-medium text-brand-primary'
+                      : 'text-text-secondary hover:bg-surface-alt hover:text-text-primary'
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -505,13 +505,13 @@ export function SettingsPage() {
             })}
           </nav>
 
-          <section key={activeSectionId} className="settings-panel-enter order-3 min-w-0 rounded-xl border border-zinc-800 bg-[#18181b] p-5 sm:p-6 lg:order-2">
-            <div className="mb-6 flex items-start justify-between gap-4 border-b border-zinc-700 pb-5">
+          <section key={activeSectionId} className="settings-panel-enter order-3 min-w-0 rounded-xl border border-border bg-surface p-5 sm:p-6 lg:order-2">
+            <div className="mb-6 flex items-start justify-between gap-4 border-b border-border pb-5">
               <div className="flex items-start gap-3">
-                <ActiveSectionIcon className="mt-0.5 h-5 w-5 text-emerald-300" />
+                <ActiveSectionIcon className="mt-0.5 h-5 w-5 text-brand-secondary" />
                 <div>
-                  <h2 className="text-lg font-semibold text-white">{activeSection.label}</h2>
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                  <h2 className="text-lg font-semibold text-text-primary">{activeSection.label}</h2>
+                  <p className="mt-1 text-sm leading-relaxed text-text-secondary">
                     {activeSection.id === 'profile' && 'Atualize sua identificação e foto de perfil.'}
                     {activeSection.id === 'professional' && 'Esses dados são reutilizados em novas propostas e contratos.'}
                     {activeSection.id === 'financial' && 'Defina o fuso dos vencimentos. Os valores permanecem em reais.'}
@@ -521,7 +521,7 @@ export function SettingsPage() {
                 </div>
               </div>
               {dirty && (
-                <span className="shrink-0 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-200">
+                <span className="shrink-0 rounded-full bg-warning-background px-2.5 py-1 text-xs font-medium text-text-primary">
                   Não salvo
                 </span>
               )}
@@ -530,7 +530,7 @@ export function SettingsPage() {
             {activeSection.id === 'profile' && (
               <div className="space-y-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-800 text-2xl font-semibold text-emerald-200">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-light text-2xl font-semibold text-brand-primary">
                     {avatarUrl ? (
                       <img src={avatarUrl} alt={`Foto de ${form.name}`} className="h-full w-full object-cover" />
                     ) : (
@@ -538,8 +538,8 @@ export function SettingsPage() {
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-white">Foto de perfil</p>
-                    <p className="mt-1 text-sm text-zinc-300">JPG, PNG ou WebP, até 2 MB.</p>
+                    <p className="font-medium text-text-primary">Foto de perfil</p>
+                    <p className="mt-1 text-sm text-text-secondary">JPG, PNG ou WebP, até 2 MB.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <input
                         ref={fileInputRef}
@@ -554,7 +554,7 @@ export function SettingsPage() {
                         size="sm"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={avatarBusy}
-                        className="bg-zinc-700 text-white hover:bg-zinc-600"
+                        className="bg-brand-light text-brand-primary hover:bg-surface-accent active:bg-brand-light"
                       >
                         {avatarBusy
                           ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -568,7 +568,7 @@ export function SettingsPage() {
                           variant="outline"
                           onClick={removeAvatar}
                           disabled={avatarBusy}
-                          className="border-zinc-600 text-zinc-200 hover:bg-zinc-800"
+                          className="border-border-strong text-text-secondary hover:bg-surface-alt"
                         >
                           Remover
                         </Button>
@@ -584,7 +584,7 @@ export function SettingsPage() {
                     onChange={(event) => updateForm('name', event.target.value)}
                     maxLength={120}
                     autoComplete="name"
-                    className="border-zinc-700 bg-zinc-900 text-white placeholder:text-zinc-400"
+                    className="border-border bg-surface text-text-primary placeholder:text-text-secondary"
                   />
                 </Field>
                 <Field id="profile-email" label="E-mail de acesso" hint="Para alterar este endereço, use a seção Segurança.">
@@ -592,7 +592,7 @@ export function SettingsPage() {
                     id="profile-email"
                     value={email}
                     readOnly
-                    className="border-zinc-700 bg-zinc-900/70 text-zinc-300"
+                    className="border-border bg-surface text-text-secondary"
                   />
                 </Field>
               </div>
@@ -601,22 +601,22 @@ export function SettingsPage() {
             {activeSection.id === 'professional' && (
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field id="provider-display-name" label="Nome profissional">
-                  <Input id="provider-display-name" value={form.provider.display_name} onChange={(event) => updateProvider('display_name', event.target.value)} maxLength={200} className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Input id="provider-display-name" value={form.provider.display_name} onChange={(event) => updateProvider('display_name', event.target.value)} maxLength={200} className="border-border bg-surface text-text-primary" />
                 </Field>
                 <Field id="provider-legal-name" label="Razão social / nome legal">
-                  <Input id="provider-legal-name" value={form.provider.legal_name} onChange={(event) => updateProvider('legal_name', event.target.value)} maxLength={200} className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Input id="provider-legal-name" value={form.provider.legal_name} onChange={(event) => updateProvider('legal_name', event.target.value)} maxLength={200} className="border-border bg-surface text-text-primary" />
                 </Field>
                 <Field id="provider-document" label="CPF ou CNPJ">
-                  <Input id="provider-document" value={form.provider.document} onChange={(event) => updateProvider('document', event.target.value)} maxLength={30} className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Input id="provider-document" value={form.provider.document} onChange={(event) => updateProvider('document', event.target.value)} maxLength={30} className="border-border bg-surface text-text-primary" />
                 </Field>
                 <Field id="provider-representative" label="Representante legal">
-                  <Input id="provider-representative" value={form.provider.representative_name} onChange={(event) => updateProvider('representative_name', event.target.value)} maxLength={200} className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Input id="provider-representative" value={form.provider.representative_name} onChange={(event) => updateProvider('representative_name', event.target.value)} maxLength={200} className="border-border bg-surface text-text-primary" />
                 </Field>
                 <Field id="provider-email" label="E-mail profissional">
-                  <Input id="provider-email" type="email" value={form.provider.email} onChange={(event) => updateProvider('email', event.target.value)} maxLength={254} className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Input id="provider-email" type="email" value={form.provider.email} onChange={(event) => updateProvider('email', event.target.value)} maxLength={254} className="border-border bg-surface text-text-primary" />
                 </Field>
                 <Field id="provider-phone" label="Telefone profissional">
-                  <Input id="provider-phone" type="tel" value={form.provider.phone} onChange={(event) => updateProvider('phone', event.target.value)} maxLength={40} className="border-zinc-700 bg-zinc-900 text-white" />
+                  <Input id="provider-phone" type="tel" value={form.provider.phone} onChange={(event) => updateProvider('phone', event.target.value)} maxLength={40} className="border-border bg-surface text-text-primary" />
                 </Field>
                 <div className="sm:col-span-2">
                   <Field id="provider-address" label="Endereço completo">
@@ -626,7 +626,7 @@ export function SettingsPage() {
                       onChange={(event) => updateProvider('address', event.target.value)}
                       maxLength={500}
                       rows={3}
-                      className="flex w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                      className="flex w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                     />
                   </Field>
                 </div>
@@ -640,7 +640,7 @@ export function SettingsPage() {
                     id="settings-timezone"
                     value={form.timezone}
                     onChange={(event) => updateForm('timezone', event.target.value)}
-                    className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                   >
                     {TIMEZONES.map(([value, label]) => (
                       <option key={value} value={value}>{label}</option>
@@ -650,22 +650,22 @@ export function SettingsPage() {
                     )}
                   </select>
                 </Field>
-                <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
-                    <Wallet className="h-4 w-4 text-emerald-300" />
+                <div className="rounded-lg border border-border bg-surface p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                    <Wallet className="h-4 w-4 text-brand-secondary" />
                     Moeda padrão
                   </div>
-                  <p className="mt-2 text-sm text-zinc-300">Real brasileiro (BRL · R$)</p>
-                  <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                  <p className="mt-2 text-sm text-text-secondary">Real brasileiro (BRL · R$)</p>
+                  <p className="mt-1 text-xs leading-relaxed text-text-secondary">
                     A moeda permanece fixa para preservar os valores já registrados.
                   </p>
                 </div>
-                <div className="border-t border-zinc-700 pt-6">
+                <div className="border-t border-border pt-6">
                   <div className="mb-4 flex items-start gap-3">
-                    <Clock3 className="mt-0.5 h-4 w-4 text-zinc-300" />
+                    <Clock3 className="mt-0.5 h-4 w-4 text-text-secondary" />
                     <div>
-                      <h3 className="text-sm font-semibold text-white">Saldo inicial</h3>
-                      <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                      <h3 className="text-sm font-semibold text-text-primary">Saldo inicial</h3>
+                      <p className="mt-1 text-sm leading-relaxed text-text-secondary">
                         {balanceEditable
                           ? 'Pode ser alterado enquanto não houver outros lançamentos financeiros.'
                           : 'Bloqueado porque já existem outros lançamentos no histórico.'}
@@ -681,14 +681,14 @@ export function SettingsPage() {
                         onChange={(event) => setInitialBalance(event.target.value)}
                         disabled={!balanceEditable || balanceBusy}
                         aria-describedby="opening-balance-hint"
-                        className="border-zinc-700 bg-zinc-900 text-white disabled:text-zinc-400"
+                        className="border-border bg-surface text-text-primary disabled:text-text-secondary"
                       />
                     </Field>
                     <Button
                       type="button"
                       onClick={saveOpeningBalance}
                       disabled={!balanceEditable || balanceBusy}
-                      className="bg-zinc-700 text-white hover:bg-zinc-600"
+                      className="bg-brand-light text-brand-primary hover:bg-surface-accent active:bg-brand-light"
                     >
                       {balanceBusy
                         ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -696,7 +696,7 @@ export function SettingsPage() {
                       Atualizar saldo
                     </Button>
                   </div>
-                  <p id="opening-balance-hint" className="mt-2 text-xs text-zinc-400">
+                  <p id="opening-balance-hint" className="mt-2 text-xs text-text-secondary">
                     Saldo atual registrado: {initialBalanceCents === null ? 'não definido' : formatCurrency(initialBalanceCents)}.
                   </p>
                 </div>
@@ -704,7 +704,7 @@ export function SettingsPage() {
             )}
 
             {activeSection.id === 'alerts' && (
-              <div className="divide-y divide-zinc-700">
+              <div className="divide-y divide-border">
                 <ToggleRow
                   id="client-email-reminders"
                   title="Enviar lembretes aos clientes"
@@ -726,8 +726,8 @@ export function SettingsPage() {
                   checked={form.alerts.owner_email_alerts}
                   onCheckedChange={(checked) => updateAlert('owner_email_alerts', checked)}
                 />
-                <div className="flex items-start gap-3 pt-5 text-sm text-zinc-300">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-zinc-300" />
+                <div className="flex items-start gap-3 pt-5 text-sm text-text-secondary">
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-text-secondary" />
                   <p className="max-w-[65ch] leading-relaxed">
                     Lembretes por e-mail são enviados somente a clientes vinculados que tenham endereço de e-mail cadastrado.
                   </p>
@@ -739,8 +739,8 @@ export function SettingsPage() {
               <div className="space-y-8">
                 <form onSubmit={changeEmail} className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-semibold text-white">Alterar e-mail de acesso</h3>
-                    <p className="mt-1 text-sm text-zinc-300">E-mail atual: {email}</p>
+                    <h3 className="text-sm font-semibold text-text-primary">Alterar e-mail de acesso</h3>
+                    <p className="mt-1 text-sm text-text-secondary">E-mail atual: {email}</p>
                   </div>
                   <Field id="new-email" label="Novo e-mail">
                     <Input
@@ -750,19 +750,19 @@ export function SettingsPage() {
                       onChange={(event) => setEmailInput(event.target.value)}
                       autoComplete="email"
                       required
-                      className="border-zinc-700 bg-zinc-900 text-white"
+                      className="border-border bg-surface text-text-primary"
                     />
                   </Field>
-                  <Button type="submit" disabled={emailBusy} className="bg-zinc-700 text-white hover:bg-zinc-600">
+                  <Button type="submit" disabled={emailBusy} className="bg-brand-light text-brand-primary hover:bg-surface-accent active:bg-brand-light">
                     {emailBusy && <Loader2 className="h-4 w-4 animate-spin" />}
                     Solicitar alteração
                   </Button>
                 </form>
 
-                <form onSubmit={changePassword} className="space-y-4 border-t border-zinc-700 pt-6">
+                <form onSubmit={changePassword} className="space-y-4 border-t border-border pt-6">
                   <div>
-                    <h3 className="text-sm font-semibold text-white">Alterar senha</h3>
-                    <p className="mt-1 text-sm text-zinc-300">Use pelo menos 8 caracteres.</p>
+                    <h3 className="text-sm font-semibold text-text-primary">Alterar senha</h3>
+                    <p className="mt-1 text-sm text-text-secondary">Use pelo menos 8 caracteres.</p>
                   </div>
                   <Field id="new-password" label="Nova senha">
                     <Input
@@ -773,7 +773,7 @@ export function SettingsPage() {
                       autoComplete="new-password"
                       minLength={8}
                       required
-                      className="border-zinc-700 bg-zinc-900 text-white"
+                      className="border-border bg-surface text-text-primary"
                     />
                   </Field>
                   <Field id="confirm-password" label="Confirmar nova senha">
@@ -785,10 +785,10 @@ export function SettingsPage() {
                       autoComplete="new-password"
                       minLength={8}
                       required
-                      className="border-zinc-700 bg-zinc-900 text-white"
+                      className="border-border bg-surface text-text-primary"
                     />
                   </Field>
-                  <Button type="submit" disabled={passwordBusy} className="bg-zinc-700 text-white hover:bg-zinc-600">
+                  <Button type="submit" disabled={passwordBusy} className="bg-brand-light text-brand-primary hover:bg-surface-accent active:bg-brand-light">
                     {passwordBusy && <Loader2 className="h-4 w-4 animate-spin" />}
                     Atualizar senha
                   </Button>

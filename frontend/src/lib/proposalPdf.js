@@ -1,6 +1,4 @@
-const PDF_BLUE = '#0052CC';
-const PDF_DARK = '#17211f';
-const PDF_MUTED = '#596562';
+import { getDesignColors } from './designColors';
 
 async function loadProposalLogo() {
   const logoUrl = `${process.env.PUBLIC_URL || ''}/logo_robsonsvicero.png`;
@@ -39,7 +37,7 @@ function formatDate(value) {
   return `${day}/${month}/${year}`;
 }
 
-function contentLines(body) {
+function contentLines(body, colors) {
   const nodes = [];
   let bullets = [];
 
@@ -48,7 +46,7 @@ function contentLines(body) {
       nodes.push({
         ul: bullets,
         margin: [0, 0, 0, 9],
-        color: PDF_DARK,
+        color: colors.textPrimary,
         fontSize: 10,
         lineHeight: 1.3,
       });
@@ -69,7 +67,7 @@ function contentLines(body) {
       nodes.push({
         text: line,
         margin: [0, 0, 0, 8],
-        color: PDF_DARK,
+        color: colors.textPrimary,
         fontSize: 10,
         lineHeight: 1.3,
       });
@@ -95,7 +93,7 @@ function isFinancialSection(section) {
     || ['investimento', 'condicoes de pagamento'].includes(normalizeSectionTitle(section.title));
 }
 
-function financialSectionContent(proposal, sections) {
+function financialSectionContent(proposal, sections, colors) {
   const notes = sections.map((section) => {
     const body = section.body?.trim() || '';
     if (!body) return '';
@@ -109,11 +107,11 @@ function financialSectionContent(proposal, sections) {
     return body;
   }).filter(Boolean).join('\n\n');
   const nodes = [
-    { text: 'Investimento total', color: PDF_MUTED, fontSize: 9, margin: [0, 0, 0, 3] },
+    { text: 'Investimento total', color: colors.textSecondary, fontSize: 9, margin: [0, 0, 0, 3] },
     {
       text: formatCurrency(proposal.amount_cents),
       bold: true,
-      color: PDF_BLUE,
+      color: colors.brandPrimary,
       fontSize: 15,
       margin: [0, 0, 0, 12],
     },
@@ -132,15 +130,15 @@ function financialSectionContent(proposal, sections) {
             { text: 'VALOR', style: 'paymentTableHeader', alignment: 'right' },
           ],
           ...payments.map((payment) => [
-            { text: payment.description, color: PDF_DARK },
-            { text: formatDate(payment.due_date), color: PDF_DARK },
-            { text: formatCurrency(payment.amount_cents), color: PDF_DARK, alignment: 'right' },
+            { text: payment.description, color: colors.textPrimary },
+            { text: formatDate(payment.due_date), color: colors.textPrimary },
+            { text: formatCurrency(payment.amount_cents), color: colors.textPrimary, alignment: 'right' },
           ]),
         ],
       },
       layout: {
-        fillColor: (rowIndex) => (rowIndex === 0 ? '#F0F4F3' : null),
-        hLineColor: () => '#D7DEDB',
+        fillColor: (rowIndex) => (rowIndex === 0 ? colors.surfaceAlt : null),
+        hLineColor: () => colors.border,
         vLineWidth: () => 0,
         paddingLeft: () => 8,
         paddingRight: () => 8,
@@ -152,11 +150,12 @@ function financialSectionContent(proposal, sections) {
     });
   }
 
-  if (notes) nodes.push(...contentLines(notes));
+  if (notes) nodes.push(...contentLines(notes, colors));
   return nodes;
 }
 
 export function createProposalPdfDefinition(proposal, logoDataUrl) {
+  const colors = getDesignColors();
   const sections = proposal.content?.sections || [];
   const financialSections = sections.filter(isFinancialSection);
   const provider = proposal.content?.provider || {};
@@ -203,7 +202,7 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
         const title = financialSections.find((item) => item.kind === 'financial')?.title
           || 'Investimento e formas de pagamento';
         content.push({ text: title, style: 'sectionHeading', keepWithNext: true });
-        content.push(...financialSectionContent(proposal, financialSections));
+        content.push(...financialSectionContent(proposal, financialSections, colors));
         financialRendered = true;
       }
       return;
@@ -213,7 +212,7 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
     if (!body) return;
 
     content.push({ text: section.title, style: 'sectionHeading', keepWithNext: true });
-    content.push(...contentLines(body));
+    content.push(...contentLines(body, colors));
   });
 
   if (!financialRendered) {
@@ -222,13 +221,13 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
       style: 'sectionHeading',
       keepWithNext: true,
     });
-    content.push(...financialSectionContent(proposal, []));
+    content.push(...financialSectionContent(proposal, [], colors));
   }
 
   if (proposal.content?.city) {
     content.push({
       text: `${proposal.content.city}, ${formatDate(proposal.issue_date)}`,
-      color: PDF_MUTED,
+      color: colors.textSecondary,
       fontSize: 9,
       margin: [0, 22, 0, 0],
     });
@@ -239,7 +238,7 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
     pageMargins: [48, 96, 48, 54],
     defaultStyle: {
       font: 'Roboto',
-      color: PDF_DARK,
+      color: colors.textPrimary,
     },
     header: {
       margin: [48, 16, 48, 0],
@@ -248,9 +247,9 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
         {
           width: '*',
           stack: [
-            { text: 'PROPOSTA COMERCIAL', color: PDF_BLUE, bold: true, fontSize: 8 },
-            { text: proposal.client_name || 'Proposta', color: PDF_MUTED, fontSize: 8, margin: [0, 4, 0, 0] },
-            { text: formatDate(proposal.issue_date), color: PDF_MUTED, fontSize: 8, margin: [0, 3, 0, 0] },
+            { text: 'PROPOSTA COMERCIAL', color: colors.brandPrimary, bold: true, fontSize: 8 },
+            { text: proposal.client_name || 'Proposta', color: colors.textSecondary, fontSize: 8, margin: [0, 4, 0, 0] },
+            { text: formatDate(proposal.issue_date), color: colors.textSecondary, fontSize: 8, margin: [0, 3, 0, 0] },
           ],
           alignment: 'right',
         },
@@ -265,47 +264,47 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
             `Proposta para ${proposal.client_name || 'cliente'}`,
             providerContact,
           ].filter(Boolean).join(' · '),
-          color: PDF_MUTED,
+          color: colors.textSecondary,
           fontSize: 7,
         },
-        { text: `${currentPage} / ${pageCount}`, alignment: 'right', color: PDF_MUTED, fontSize: 8 },
+        { text: `${currentPage} / ${pageCount}`, alignment: 'right', color: colors.textSecondary, fontSize: 8 },
       ],
     }),
     content,
     styles: {
       eyebrow: {
-        color: PDF_BLUE,
+        color: colors.brandPrimary,
         bold: true,
         fontSize: 8,
         characterSpacing: 1.6,
         margin: [0, 0, 0, 7],
       },
       title: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         bold: true,
         fontSize: 23,
         lineHeight: 1.15,
         margin: [0, 0, 0, 14],
       },
       metaLabel: {
-        color: PDF_MUTED,
+        color: colors.textSecondary,
         bold: true,
         fontSize: 7,
         characterSpacing: 0.8,
       },
       metaValue: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         fontSize: 10,
         lineHeight: 1.4,
       },
       paymentTableHeader: {
-        color: PDF_MUTED,
+        color: colors.textSecondary,
         bold: true,
         fontSize: 7,
         characterSpacing: 0.4,
       },
       sectionHeading: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         bold: true,
         fontSize: 12,
         margin: [0, 8, 0, 8],

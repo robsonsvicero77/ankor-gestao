@@ -47,7 +47,7 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#09090b]">
+    <div className="min-h-screen flex bg-surface-background">
       {/* Left side - Image */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div 
@@ -56,13 +56,13 @@ export function RegisterPage() {
             backgroundImage: `url('https://images.unsplash.com/photo-1743778812446-89def1e784cf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMGdlb21ldHJpYyUyMGRhcmslMjBmaW5hbmNlJTIwYmFja2dyb3VuZCUyMG1pbmltYWxpc3R8ZW58MHx8fHwxNzcyNDYwMDM1fDA&ixlib=rb-4.1.0&q=85')`
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b]/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-overlay via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-overlay/80 via-transparent to-transparent" />
         <div className="relative z-10 flex flex-col justify-end p-12">
-          <h2 className="text-4xl font-bold text-white mb-4">
+          <h2 className="text-4xl font-bold text-text-inverse mb-4">
             Comece a organizar<br />suas finanças hoje
           </h2>
-          <p className="text-zinc-400 text-lg max-w-md">
+          <p className="text-text-inverse/85 text-lg max-w-md">
             Em poucos minutos, tenha uma visão clara do seu fluxo de caixa
             e faça projeções para os próximos 30 dias.
           </p>
@@ -71,15 +71,15 @@ export function RegisterPage() {
 
       {/* Right side - Form */}
       <div className="flex-1 flex items-center justify-center p-4 lg:p-8">
-        <Card className="w-full max-w-md bg-[#18181b] border-zinc-800">
+        <Card className="w-full max-w-md bg-surface border-border">
           <CardHeader className="space-y-1">
             <div className="mb-4 lg:hidden">
-              <h1 className="text-2xl font-bold text-white">
-                Ankor<span className="text-emerald-500">Gestão</span>
+              <h1 className="text-2xl font-bold text-text-primary">
+                Ankor<span className="text-brand-primary">Gestão</span>
               </h1>
             </div>
-            <CardTitle className="text-2xl text-white">Criar conta</CardTitle>
-            <CardDescription className="text-zinc-400">
+            <CardTitle className="text-2xl text-text-primary">Criar conta</CardTitle>
+            <CardDescription className="text-text-secondary">
               {emailConfirmationRequired
                 ? 'Confirme seu e-mail para acessar sua conta'
                 : 'Preencha os dados para começar'}
@@ -88,28 +88,28 @@ export function RegisterPage() {
           <CardContent>
             {emailConfirmationRequired ? (
               <div className="space-y-4 text-center">
-                <div className="flex items-center justify-center gap-2 text-emerald-400">
+                <div className="flex items-center justify-center gap-2 text-success">
                   <CheckCircle2 className="h-5 w-5" />
                   <span>Enviamos um link de confirmação para {email}.</span>
                 </div>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-text-secondary">
                   Abra o link no e-mail para confirmar sua conta e depois entre no sistema.
                 </p>
-                <Link to="/login" className="inline-block text-emerald-500 hover:text-emerald-400 font-medium">
+                <Link to="/login" className="inline-block text-brand-primary hover:text-brand-hover font-medium">
                   Ir para entrar
                 </Link>
               </div>
             ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-error-background border border-error/30 text-error text-sm">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   {error}
                 </div>
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-zinc-300">Nome</Label>
+                <Label htmlFor="name" className="text-text-secondary">Nome</Label>
                 <Input
                   id="name"
                   type="text"
@@ -118,12 +118,12 @@ export function RegisterPage() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   data-testid="register-name-input"
-                  className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500 text-white placeholder:text-zinc-500"
+                  className="bg-surface border-border focus:border-focus text-text-primary placeholder:text-text-secondary"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-zinc-300">E-mail</Label>
+                <Label htmlFor="email" className="text-text-secondary">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
@@ -132,12 +132,12 @@ export function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   data-testid="register-email-input"
-                  className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500 text-white placeholder:text-zinc-500"
+                  className="bg-surface border-border focus:border-focus text-text-primary placeholder:text-text-secondary"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-zinc-300">Senha</Label>
+                <Label htmlFor="password" className="text-text-secondary">Senha</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -147,18 +147,20 @@ export function RegisterPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     data-testid="register-password-input"
-                    className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500 text-white placeholder:text-zinc-500 pr-10"
+                    className="bg-surface border-border focus:border-focus text-text-primary placeholder:text-text-secondary pr-10"
                   />
                   <button
                     type="button"
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    aria-pressed={showPassword}
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-secondary"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
                 {password.length > 0 && (
-                  <div className={`flex items-center gap-1 text-xs ${passwordValid ? 'text-emerald-500' : 'text-zinc-500'}`}>
+                  <div className={`flex items-center gap-1 text-xs ${passwordValid ? 'text-success' : 'text-text-secondary'}`}>
                     <CheckCircle2 className="h-3 w-3" />
                     Mínimo 6 caracteres
                   </div>
@@ -166,7 +168,7 @@ export function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-zinc-300">Confirmar senha</Label>
+                <Label htmlFor="confirmPassword" className="text-text-secondary">Confirmar senha</Label>
                 <Input
                   id="confirmPassword"
                   type={showPassword ? 'text' : 'password'}
@@ -175,10 +177,10 @@ export function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   data-testid="register-confirm-password-input"
-                  className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500 text-white placeholder:text-zinc-500"
+                  className="bg-surface border-border focus:border-focus text-text-primary placeholder:text-text-secondary"
                 />
                 {confirmPassword.length > 0 && (
-                  <div className={`flex items-center gap-1 text-xs ${passwordsMatch ? 'text-emerald-500' : 'text-red-400'}`}>
+                  <div className={`flex items-center gap-1 text-xs ${passwordsMatch ? 'text-success' : 'text-error'}`}>
                     <CheckCircle2 className="h-3 w-3" />
                     {passwordsMatch ? 'Senhas coincidem' : 'Senhas não coincidem'}
                   </div>
@@ -189,7 +191,7 @@ export function RegisterPage() {
                 type="submit"
                 disabled={loading || !passwordValid || !passwordsMatch}
                 data-testid="register-submit-btn"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white btn-press disabled:opacity-50"
+                className="w-full bg-brand-primary hover:bg-brand-hover active:bg-brand-active text-text-inverse btn-press disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -201,9 +203,9 @@ export function RegisterPage() {
                 )}
               </Button>
 
-              <p className="text-center text-sm text-zinc-400">
+              <p className="text-center text-sm text-text-secondary">
                 Já tem uma conta?{' '}
-                <Link to="/login" className="text-emerald-500 hover:text-emerald-400 font-medium">
+                <Link to="/login" className="text-brand-primary hover:text-brand-hover font-medium">
                   Entrar
                 </Link>
               </p>

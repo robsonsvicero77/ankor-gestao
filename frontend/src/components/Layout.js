@@ -64,14 +64,14 @@ export function Layout({ children }) {
   }, [user?.avatar_path]);
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
+    <div className="min-h-screen bg-surface-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-64 lg:overflow-y-auto lg:bg-[#18181b] lg:border-r lg:border-zinc-800">
+      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block lg:w-64 lg:overflow-y-auto lg:bg-surface lg:border-r lg:border-border">
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex h-16 shrink-0 items-center px-6 border-b border-zinc-800">
-            <h1 className="text-xl font-bold text-white">
-              Ankor<span className="text-emerald-500">Gestão</span>
+          <div className="flex h-16 shrink-0 items-center px-6 border-b border-border">
+            <h1 className="text-xl font-bold text-text-primary">
+              Ankor<span className="text-brand-primary">Gestão</span>
             </h1>
           </div>
 
@@ -88,8 +88,8 @@ export function Layout({ children }) {
                   className={cn(
                     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
                     isActive
-                      ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                      ? 'bg-brand-light text-brand-primary border border-brand-primary/15'
+                      : 'text-text-secondary hover:bg-surface-alt hover:text-text-primary'
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -100,20 +100,20 @@ export function Layout({ children }) {
           </nav>
 
           {/* User info */}
-          <div className="border-t border-zinc-800 p-4">
+          <div className="border-t border-border p-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-brand-light flex items-center justify-center">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <span className="text-emerald-500 font-medium text-sm">
+                  <span className="text-brand-primary font-medium text-sm">
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-                <p className="text-xs text-zinc-500 truncate">{user?.email}</p>
+                <p className="text-sm font-medium text-text-primary truncate">{user?.name}</p>
+                <p className="text-xs text-text-secondary truncate">{user?.email}</p>
               </div>
             </div>
             <Button
@@ -121,7 +121,7 @@ export function Layout({ children }) {
               size="sm"
               onClick={logout}
               data-testid="logout-btn"
-              className="w-full justify-start text-zinc-400 hover:text-white hover:bg-zinc-800"
+              className="w-full justify-start text-text-secondary hover:text-text-primary hover:bg-surface-alt"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sair
@@ -131,13 +131,16 @@ export function Layout({ children }) {
       </aside>
 
       {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 z-50 flex h-14 items-center justify-between border-b border-zinc-800 bg-[#18181b]/95 backdrop-blur px-4">
-        <h1 className="text-lg font-bold text-white">
-          Ankor<span className="text-emerald-500">Gestão</span>
+      <header className="lg:hidden sticky top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-surface/95 backdrop-blur px-4">
+        <h1 className="text-lg font-bold text-text-primary">
+          Ankor<span className="text-brand-primary">Gestão</span>
         </h1>
         <Button
           variant="ghost"
           size="icon"
+          aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-navigation-menu"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           data-testid="mobile-menu-btn"
         >
@@ -147,9 +150,9 @@ export function Layout({ children }) {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMobileMenuOpen(false)}>
+        <div id="mobile-navigation-menu" className="lg:hidden fixed inset-0 z-40 bg-overlay" onClick={() => setMobileMenuOpen(false)}>
           <div 
-            className="absolute right-0 top-14 bottom-0 w-64 bg-[#18181b] border-l border-zinc-800 p-4"
+            className="absolute right-0 top-14 bottom-0 w-64 bg-surface border-l border-border p-4"
             onClick={(e) => e.stopPropagation()}
           >
             <nav className="space-y-1">
@@ -164,8 +167,8 @@ export function Layout({ children }) {
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-emerald-500/10 text-emerald-500'
-                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                        ? 'bg-brand-light text-brand-primary'
+                        : 'text-text-secondary hover:bg-surface-alt hover:text-text-primary'
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -179,7 +182,7 @@ export function Layout({ children }) {
                 variant="ghost"
                 size="sm"
                 onClick={logout}
-                className="w-full justify-start text-zinc-400 hover:text-white"
+                className="w-full justify-start text-text-secondary hover:text-text-primary"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
@@ -190,7 +193,7 @@ export function Layout({ children }) {
       )}
 
       {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-zinc-800 bg-[#18181b]/95 backdrop-blur h-16">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-surface/95 backdrop-blur h-16">
         {mobileNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = isNavItemActive(location.pathname, item.path);
@@ -201,7 +204,7 @@ export function Layout({ children }) {
               data-testid={`mobile-nav-${item.path.slice(1)}`}
               className={cn(
                 'flex min-w-0 flex-col items-center gap-1 px-1 py-2 rounded-lg transition-colors',
-                isActive ? 'text-emerald-500' : 'text-zinc-500'
+                isActive ? 'text-brand-primary' : 'text-text-secondary'
               )}
             >
               <Icon className="h-5 w-5" />

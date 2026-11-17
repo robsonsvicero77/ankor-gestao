@@ -1,20 +1,20 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { OnboardingPage } from './pages/OnboardingPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { ReceivablesPage } from './pages/ReceivablesPage';
-import { PayablesPage } from './pages/PayablesPage';
-import { ProposalsPage } from './pages/ProposalsPage';
-import { ProposalEditorPage } from './pages/ProposalEditorPage';
-import { ContractsPage } from './pages/ContractsPage';
-import { ContractEditorPage } from './pages/ContractEditorPage';
-import { ClientsPage } from './pages/ClientsPage';
-import { ClientEditorPage } from './pages/ClientEditorPage';
-import { LedgerPage } from './pages/LedgerPage';
-import { SettingsPage } from './pages/SettingsPage';
+const LoginPage = lazy(() => import('./pages/LoginPage').then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then((module) => ({ default: module.RegisterPage })));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then((module) => ({ default: module.OnboardingPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then((module) => ({ default: module.DashboardPage })));
+const ReceivablesPage = lazy(() => import('./pages/ReceivablesPage').then((module) => ({ default: module.ReceivablesPage })));
+const PayablesPage = lazy(() => import('./pages/PayablesPage').then((module) => ({ default: module.PayablesPage })));
+const ProposalsPage = lazy(() => import('./pages/ProposalsPage').then((module) => ({ default: module.ProposalsPage })));
+const ProposalEditorPage = lazy(() => import('./pages/ProposalEditorPage').then((module) => ({ default: module.ProposalEditorPage })));
+const ContractsPage = lazy(() => import('./pages/ContractsPage').then((module) => ({ default: module.ContractsPage })));
+const ContractEditorPage = lazy(() => import('./pages/ContractEditorPage').then((module) => ({ default: module.ContractEditorPage })));
+const ClientsPage = lazy(() => import('./pages/ClientsPage').then((module) => ({ default: module.ClientsPage })));
+const ClientEditorPage = lazy(() => import('./pages/ClientEditorPage').then((module) => ({ default: module.ClientEditorPage })));
+const LedgerPage = lazy(() => import('./pages/LedgerPage').then((module) => ({ default: module.LedgerPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })));
 import { Loader2 } from 'lucide-react';
 import './App.css';
 
@@ -25,8 +25,8 @@ function ProtectedRoute({ children, skipOnboardingCheck = false }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      <div className="min-h-screen flex items-center justify-center bg-surface-background">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
       </div>
     );
   }
@@ -49,8 +49,8 @@ function PublicRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      <div className="min-h-screen flex items-center justify-center bg-surface-background">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
       </div>
     );
   }
@@ -68,6 +68,7 @@ function PublicRoute({ children }) {
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface-background"><Loader2 className="h-8 w-8 animate-spin text-brand-primary" /></div>}>
     <Routes>
       {/* Public routes */}
       <Route
@@ -213,6 +214,7 @@ function AppRoutes() {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </Suspense>
   );
 }
 

@@ -31,7 +31,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#09090b]">
+    <div className="min-h-screen flex bg-surface-background">
       {/* Left side - Image */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div 
@@ -40,13 +40,13 @@ export function LoginPage() {
             backgroundImage: `url('https://images.unsplash.com/photo-1743778812446-89def1e784cf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMGdlb21ldHJpYyUyMGRhcmslMjBmaW5hbmNlJTIwYmFja2dyb3VuZCUyMG1pbmltYWxpc3R8ZW58MHx8fHwxNzcyNDYwMDM1fDA&ixlib=rb-4.1.0&q=85')`
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#09090b] via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b]/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-overlay via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-overlay/80 via-transparent to-transparent" />
         <div className="relative z-10 flex flex-col justify-end p-12">
-          <h2 className="text-4xl font-bold text-white mb-4">
+          <h2 className="text-4xl font-bold text-text-inverse mb-4">
             Controle suas finanças<br />com clareza e confiança
           </h2>
-          <p className="text-zinc-400 text-lg max-w-md">
+          <p className="text-text-inverse/85 text-lg max-w-md">
             Visualize receitas, despesas e projeções em um só lugar. 
             Tome decisões baseadas em dados reais.
           </p>
@@ -55,29 +55,29 @@ export function LoginPage() {
 
       {/* Right side - Form */}
       <div className="flex-1 flex items-center justify-center p-4 lg:p-8">
-        <Card className="w-full max-w-md bg-[#18181b] border-zinc-800">
+        <Card className="w-full max-w-md bg-surface border-border">
           <CardHeader className="space-y-1">
             <div className="mb-4 lg:hidden">
-              <h1 className="text-2xl font-bold text-white">
-                Ankor<span className="text-emerald-500">Gestão</span>
+              <h1 className="text-2xl font-bold text-text-primary">
+                Ankor<span className="text-brand-primary">Gestão</span>
               </h1>
             </div>
-            <CardTitle className="text-2xl text-white">Entrar</CardTitle>
-            <CardDescription className="text-zinc-400">
+            <CardTitle className="text-2xl text-text-primary">Entrar</CardTitle>
+            <CardDescription className="text-text-secondary">
               Acesse sua conta para continuar
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-error-background border border-error/30 text-error text-sm">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   {error}
                 </div>
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-zinc-300">E-mail</Label>
+                <Label htmlFor="email" className="text-text-secondary">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
@@ -86,12 +86,12 @@ export function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   data-testid="login-email-input"
-                  className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500 text-white placeholder:text-zinc-500"
+                  className="bg-surface border-border focus:border-focus text-text-primary placeholder:text-text-secondary"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-zinc-300">Senha</Label>
+                <Label htmlFor="password" className="text-text-secondary">Senha</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -101,12 +101,14 @@ export function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     data-testid="login-password-input"
-                    className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500 text-white placeholder:text-zinc-500 pr-10"
+                    className="bg-surface border-border focus:border-focus text-text-primary placeholder:text-text-secondary pr-10"
                   />
                   <button
                     type="button"
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    aria-pressed={showPassword}
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-secondary"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -117,7 +119,7 @@ export function LoginPage() {
                 type="submit"
                 disabled={loading}
                 data-testid="login-submit-btn"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white btn-press"
+                className="w-full bg-brand-primary hover:bg-brand-hover active:bg-brand-active text-text-inverse btn-press"
               >
                 {loading ? (
                   <>
@@ -129,9 +131,9 @@ export function LoginPage() {
                 )}
               </Button>
 
-              <p className="text-center text-sm text-zinc-400">
+              <p className="text-center text-sm text-text-secondary">
                 Não tem uma conta?{' '}
-                <Link to="/register" className="text-emerald-500 hover:text-emerald-400 font-medium">
+                <Link to="/register" className="text-brand-primary hover:text-brand-hover font-medium">
                   Criar conta
                 </Link>
               </p>

@@ -1,5 +1,13 @@
 import { createProposalPdfDefinition } from './proposalPdf';
 
+beforeAll(() => {
+  document.documentElement.style.setProperty('--brand-primary', '#5A0048');
+  document.documentElement.style.setProperty('--text-primary', '#29212A');
+  document.documentElement.style.setProperty('--text-secondary', '#665B66');
+  document.documentElement.style.setProperty('--border-color', '#E8DDE5');
+  document.documentElement.style.setProperty('--surface-alt', '#F3EBF0');
+});
+
 test('proposal PDF definition includes client, dates, investment and section text', () => {
   const logoDataUrl = 'data:image/png;base64,cm9ic29u';
   const definition = createProposalPdfDefinition({
@@ -35,7 +43,9 @@ test('proposal PDF definition includes client, dates, investment and section tex
   expect(footer).toContain('Estúdio Exemplo Ltda.');
   expect(footer).toContain('contato@example.com');
   expect(definition.header.columns[0].image).toBe(logoDataUrl);
-  expect(serialized).toContain('#0052CC');
+  expect(serialized).toContain('#5A0048');
+  expect(serialized).toContain('#29212A');
+  expect(serialized).not.toContain('#0052CC');
   expect(serialized).not.toContain('#047857');
 });
 

@@ -1,8 +1,5 @@
 import { formatCurrency, formatDate, getClientAddress } from './contractUtils';
-
-const PDF_BLUE = '#0052CC';
-const PDF_DARK = '#17211f';
-const PDF_MUTED = '#596562';
+import { getDesignColors } from './designColors';
 
 async function loadContractLogo() {
   const logoUrl = `${process.env.PUBLIC_URL || ''}/logo_robsonsvicero.png`;
@@ -28,7 +25,7 @@ async function loadContractLogo() {
   });
 }
 
-function contentLines(body) {
+function contentLines(body, colors) {
   const nodes = [];
   let bullets = [];
 
@@ -37,7 +34,7 @@ function contentLines(body) {
       nodes.push({
         ul: bullets,
         margin: [0, 0, 0, 9],
-        color: PDF_DARK,
+        color: colors.textPrimary,
         fontSize: 10,
         lineHeight: 1.3,
       });
@@ -57,7 +54,7 @@ function contentLines(body) {
       nodes.push({
         text: line,
         margin: [0, 0, 0, 8],
-        color: PDF_DARK,
+        color: colors.textPrimary,
         fontSize: 10,
         lineHeight: 1.3,
       });
@@ -83,6 +80,7 @@ function partyText(party, representative) {
 }
 
 export function createContractPdfDefinition(contract, logoDataUrl) {
+  const colors = getDesignColors();
   const client = contract.client_snapshot || {};
   const content = contract.content || {};
   const provider = content.provider || {};
@@ -103,7 +101,7 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
       text: [
         'Pelo presente instrumento particular, as partes identificadas abaixo acordam a prestação dos serviços descritos neste contrato, conforme as cláusulas e condições a seguir.',
       ],
-      color: PDF_DARK,
+      color: colors.textPrimary,
       fontSize: 10,
       lineHeight: 1.35,
       margin: [0, 0, 0, 14],
@@ -175,13 +173,13 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
     },
     { text: 'Objeto e escopo dos serviços', style: 'sectionHeading', keepWithNext: true },
     { text: `Serviços: ${serviceLabel || 'Serviço personalizado'}`, style: 'body' },
-    ...contentLines(content.object_description),
-    ...contentLines(content.scope),
+    ...contentLines(content.object_description, colors),
+    ...contentLines(content.scope, colors),
   ];
 
   if (content.deliverables) {
     body.push({ text: 'Entregáveis', style: 'subheading', keepWithNext: true });
-    body.push(...contentLines(content.deliverables));
+    body.push(...contentLines(content.deliverables, colors));
   }
 
   body.push({ text: 'Prazo e cronograma', style: 'sectionHeading', keepWithNext: true });
@@ -189,7 +187,7 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
     text: `Início previsto: ${formatDate(contract.start_date)}${contract.end_date ? ` · Término previsto: ${formatDate(contract.end_date)}` : ''}`,
     style: 'body',
   });
-  if (content.timeline_notes) body.push(...contentLines(content.timeline_notes));
+  if (content.timeline_notes) body.push(...contentLines(content.timeline_notes, colors));
 
   body.push({ text: 'Investimento e forma de pagamento', style: 'sectionHeading', keepWithNext: true });
   body.push({
@@ -215,8 +213,8 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
       ],
     },
     layout: {
-      hLineColor: () => '#d5d9de',
-      vLineColor: () => '#e7eaee',
+      hLineColor: () => colors.border,
+      vLineColor: () => colors.border,
       paddingLeft: () => 8,
       paddingRight: () => 8,
       paddingTop: () => 7,
@@ -227,13 +225,13 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
 
   (content.clauses || []).forEach((clause) => {
     body.push({ text: clause.title, style: 'sectionHeading', keepWithNext: true });
-    if (clause.body?.trim()) body.push(...contentLines(clause.body));
+    if (clause.body?.trim()) body.push(...contentLines(clause.body, colors));
   });
 
   if (content.contract_city) {
     body.push({
       text: `${content.contract_city}, ${formatDate(contract.issue_date)}`,
-      color: PDF_MUTED,
+      color: colors.textSecondary,
       fontSize: 9,
       margin: [0, 18, 0, 12],
     });
@@ -250,7 +248,7 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
         width: '*',
         stack: [
           { text: 'CONTRATANTE', style: 'signatureLabel' },
-          { text: '\n\n____________________________________', alignment: 'center', color: PDF_MUTED },
+          { text: '\n\n____________________________________', alignment: 'center', color: colors.textSecondary },
           { text: client.name || 'Contratante', style: 'signatureName', alignment: 'center' },
           { text: client.document ? `CPF/CNPJ: ${client.document}` : '', style: 'signatureMeta', alignment: 'center' },
         ],
@@ -259,7 +257,7 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
         width: '*',
         stack: [
           { text: 'CONTRATADA', style: 'signatureLabel' },
-          { text: '\n\n____________________________________', alignment: 'center', color: PDF_MUTED },
+          { text: '\n\n____________________________________', alignment: 'center', color: colors.textSecondary },
           { text: provider.display_name || 'Contratada', style: 'signatureName', alignment: 'center' },
           { text: provider.document ? `CPF/CNPJ: ${provider.document}` : '', style: 'signatureMeta', alignment: 'center' },
         ],
@@ -274,7 +272,7 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
     pageMargins: [48, 96, 48, 54],
     defaultStyle: {
       font: 'Roboto',
-      color: PDF_DARK,
+      color: colors.textPrimary,
     },
     header: {
       margin: [48, 16, 48, 0],
@@ -283,9 +281,9 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
         {
           width: '*',
           stack: [
-            { text: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS', color: PDF_BLUE, bold: true, fontSize: 8 },
-            { text: contract.title || 'Contrato', color: PDF_MUTED, fontSize: 8, margin: [0, 4, 0, 0] },
-            { text: client.name || 'Contratante', color: PDF_MUTED, fontSize: 8, margin: [0, 3, 0, 0] },
+            { text: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS', color: colors.brandPrimary, bold: true, fontSize: 8 },
+            { text: contract.title || 'Contrato', color: colors.textSecondary, fontSize: 8, margin: [0, 4, 0, 0] },
+            { text: client.name || 'Contratante', color: colors.textSecondary, fontSize: 8, margin: [0, 3, 0, 0] },
           ],
           alignment: 'right',
         },
@@ -295,90 +293,90 @@ export function createContractPdfDefinition(contract, logoDataUrl) {
     footer: (currentPage, pageCount) => ({
       margin: [48, 0, 48, 22],
       columns: [
-        { text: `Contrato para ${client.name || 'cliente'}`, color: PDF_MUTED, fontSize: 8 },
-        { text: `${currentPage} / ${pageCount}`, alignment: 'right', color: PDF_MUTED, fontSize: 8 },
+        { text: `Contrato para ${client.name || 'cliente'}`, color: colors.textSecondary, fontSize: 8 },
+        { text: `${currentPage} / ${pageCount}`, alignment: 'right', color: colors.textSecondary, fontSize: 8 },
       ],
     }),
     content: body,
     styles: {
       eyebrow: {
-        color: PDF_BLUE,
+        color: colors.brandPrimary,
         bold: true,
         fontSize: 8,
         characterSpacing: 1.6,
         margin: [0, 0, 0, 7],
       },
       title: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         bold: true,
         fontSize: 22,
         lineHeight: 1.15,
         margin: [0, 0, 0, 12],
       },
       metaLabel: {
-        color: PDF_MUTED,
+        color: colors.textSecondary,
         bold: true,
         fontSize: 7,
         characterSpacing: 0.8,
         margin: [0, 0, 0, 4],
       },
       metaValue: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         fontSize: 10,
         lineHeight: 1.4,
       },
       amount: {
-        color: PDF_BLUE,
+        color: colors.brandPrimary,
         bold: true,
         fontSize: 14,
       },
       sectionHeading: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         bold: true,
         fontSize: 12,
         margin: [0, 8, 0, 8],
       },
       subheading: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         bold: true,
         fontSize: 10,
         margin: [0, 4, 0, 6],
       },
       body: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         fontSize: 10,
         lineHeight: 1.3,
         margin: [0, 0, 0, 8],
       },
       tableHeader: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         bold: true,
         fontSize: 9,
-        fillColor: '#f0f3f6',
+        fillColor: colors.surfaceAlt,
       },
       tableCell: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         fontSize: 9,
       },
       tableTotal: {
-        color: PDF_BLUE,
+        color: colors.brandPrimary,
         bold: true,
         fontSize: 10,
       },
       signatureLabel: {
-        color: PDF_MUTED,
+        color: colors.textSecondary,
         bold: true,
         fontSize: 8,
         alignment: 'center',
       },
       signatureName: {
-        color: PDF_DARK,
+        color: colors.textPrimary,
         bold: true,
         fontSize: 9,
         margin: [0, 4, 0, 0],
       },
       signatureMeta: {
-        color: PDF_MUTED,
+        color: colors.textSecondary,
         fontSize: 8,
       },
     },

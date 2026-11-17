@@ -34,7 +34,7 @@ The product is a web application with a React frontend, a FastAPI API, Supabase 
 - Signature collection, email delivery, and automatic status transitions are not part of the confirmed request.
 
 ## Brand Commitments
-The product name is AnkorGestão and should be displayed consistently. Proposal PDFs should follow the supplied proposal model. Contract PDFs should include the supplied logo and use blue `#0052CC`, consistent with the proposal PDF.
+The product name is AnkorGestão and should be displayed consistently. The visual identity is Elegant Burgundy, with institutional primary `#5A0048`; use the centralized CSS design tokens throughout the interface and exported PDFs. Proposal PDFs should follow the supplied proposal model, and contract PDFs should include the supplied logo.
 
 ## Evidence on Hand
 A user-supplied commercial proposal DOCX is available as reference for proposal fields, section order, payment options, and PDF structure. A user-supplied service contract DOCX is available as reference for party details, clauses, and payment terms. Do not reuse either document's client-specific examples as sample data.

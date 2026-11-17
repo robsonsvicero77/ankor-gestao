@@ -11,7 +11,7 @@ Use the supplied proposal's sections: presentation, objectives, scope, deliverab
 
 ## Direction contract
 THESIS: Make each proposal a traceable business record, not a disposable document.
-OWN-WORLD: Inherit the existing zinc-and-emerald application UI, typography, and components; the exported PDF is a clean, printable document following the supplied model.
+OWN-WORLD: Inherit the Elegant Burgundy application UI, typography, and components; the exported PDF is a clean, printable document following the supplied model and shared design tokens.
 STORY: Scan client, value, validity, and status; open a proposal to edit its sections or download its current PDF.
 FIRST VIEWPORT: Place the page title and primary create action above compact status totals, then search/status filters and a readable proposal register; edit in a focused page with grouped document sections.
 FORM: Searchable register plus section-based editor, extending the established app patterns. Preserve the user-pinned model and current visual world.

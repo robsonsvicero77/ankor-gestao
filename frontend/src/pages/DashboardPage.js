@@ -109,7 +109,7 @@ export function DashboardPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
         </div>
       </Layout>
     );
@@ -119,8 +119,8 @@ export function DashboardPage() {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center h-[60vh] text-center">
-          <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
-          <p className="text-zinc-400">{error}</p>
+          <AlertTriangle className="h-12 w-12 text-warning mb-4" />
+          <p className="text-text-secondary">{error}</p>
           <Button onClick={fetchDashboard} className="mt-4">
             Tentar novamente
           </Button>
@@ -135,8 +135,8 @@ export function DashboardPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-white">Dashboard</h1>
-            <p className="text-zinc-400 text-sm mt-1">Visão geral das suas finanças</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">Dashboard</h1>
+            <p className="text-text-secondary text-sm mt-1">Visão geral das suas finanças</p>
           </div>
           
           {/* Alert Status Badge */}
@@ -152,17 +152,17 @@ export function DashboardPage() {
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Current Balance */}
-          <Card className="bg-[#18181b] border-zinc-800 card-interactive">
+          <Card className="bg-surface border-border card-interactive">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-emerald-500/10">
-                  <Wallet className="h-5 w-5 text-emerald-500" />
+                <div className="p-2 rounded-lg bg-success-background">
+                  <Wallet className="h-5 w-5 text-success" />
                 </div>
-                <span className="text-sm text-zinc-400">Saldo Atual</span>
+                <span className="text-sm text-text-secondary">Saldo Atual</span>
               </div>
               <p className={cn(
                 'text-2xl font-bold font-mono tabular-nums',
-                dashboard?.current_balance_cents >= 0 ? 'text-emerald-500' : 'text-red-500'
+                dashboard?.current_balance_cents >= 0 ? 'text-success' : 'text-error'
               )} data-testid="current-balance">
                 {formatCurrency(dashboard?.current_balance_cents || 0)}
               </p>
@@ -170,21 +170,21 @@ export function DashboardPage() {
           </Card>
 
           {/* Receivables 30d */}
-          <Card className="bg-[#18181b] border-zinc-800 card-interactive">
+          <Card className="bg-surface border-border card-interactive">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-blue-500/10">
-                  <TrendingUp className="h-5 w-5 text-blue-500" />
+                <div className="p-2 rounded-lg bg-info-background">
+                  <TrendingUp className="h-5 w-5 text-brand-secondary" />
                 </div>
-                <span className="text-sm text-zinc-400">Receitas (30 dias)</span>
+                <span className="text-sm text-text-secondary">Receitas (30 dias)</span>
               </div>
-              <p className="text-2xl font-bold font-mono tabular-nums text-blue-500" data-testid="receivables-30d">
+              <p className="text-2xl font-bold font-mono tabular-nums text-brand-secondary" data-testid="receivables-30d">
                 {formatCurrency(dashboard?.receivables_30d_cents || 0)}
               </p>
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-text-secondary mt-1">
                 {dashboard?.pending_receivables_count || 0} pendentes
                 {dashboard?.overdue_receivables_count > 0 && (
-                  <span className="text-red-400 ml-1">
+                  <span className="text-error ml-1">
                     ({dashboard.overdue_receivables_count} atrasadas)
                   </span>
                 )}
@@ -193,21 +193,21 @@ export function DashboardPage() {
           </Card>
 
           {/* Payables 30d */}
-          <Card className="bg-[#18181b] border-zinc-800 card-interactive">
+          <Card className="bg-surface border-border card-interactive">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-rose-500/10">
-                  <TrendingDown className="h-5 w-5 text-rose-500" />
+                <div className="p-2 rounded-lg bg-error-background">
+                  <TrendingDown className="h-5 w-5 text-error" />
                 </div>
-                <span className="text-sm text-zinc-400">Despesas (30 dias)</span>
+                <span className="text-sm text-text-secondary">Despesas (30 dias)</span>
               </div>
-              <p className="text-2xl font-bold font-mono tabular-nums text-rose-500" data-testid="payables-30d">
+              <p className="text-2xl font-bold font-mono tabular-nums text-error" data-testid="payables-30d">
                 {formatCurrency(dashboard?.payables_30d_cents || 0)}
               </p>
-              <p className="text-xs text-zinc-500 mt-1">
+              <p className="text-xs text-text-secondary mt-1">
                 {dashboard?.pending_payables_count || 0} pendentes
                 {dashboard?.overdue_payables_count > 0 && (
-                  <span className="text-red-400 ml-1">
+                  <span className="text-error ml-1">
                     ({dashboard.overdue_payables_count} atrasadas)
                   </span>
                 )}
@@ -216,52 +216,52 @@ export function DashboardPage() {
           </Card>
 
           {/* Projected Balance */}
-          <Card className="bg-[#18181b] border-zinc-800 card-interactive">
+          <Card className="bg-surface border-border card-interactive">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-purple-500/10">
-                  <Target className="h-5 w-5 text-purple-500" />
+                <div className="p-2 rounded-lg bg-brand-light">
+                  <Target className="h-5 w-5 text-brand-secondary" />
                 </div>
-                <span className="text-sm text-zinc-400">Saldo Projetado</span>
+                <span className="text-sm text-text-secondary">Saldo Projetado</span>
               </div>
               <p className={cn(
                 'text-2xl font-bold font-mono tabular-nums',
-                dashboard?.projected_balance_cents >= 0 ? 'text-purple-500' : 'text-red-500'
+                dashboard?.projected_balance_cents >= 0 ? 'text-brand-secondary' : 'text-error'
               )} data-testid="projected-balance">
                 {formatCurrency(dashboard?.projected_balance_cents || 0)}
               </p>
-              <p className="text-xs text-zinc-500 mt-1">em 30 dias</p>
+              <p className="text-xs text-text-secondary mt-1">em 30 dias</p>
             </CardContent>
           </Card>
         </div>
 
         {alertsError && (
-          <p role="alert" className="text-sm text-amber-200">{alertsError}</p>
+          <p role="alert" className="text-sm text-text-primary">{alertsError}</p>
         )}
 
         {alertsEnabled && (
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg text-white">
-                <BellRing className="h-5 w-5 text-amber-300" />
+              <CardTitle className="flex items-center gap-2 text-lg text-text-primary">
+                <BellRing className="h-5 w-5 text-text-primary" />
                 Alertas de vencimento
               </CardTitle>
             </CardHeader>
             <CardContent>
               {alerts.length === 0 ? (
-                <p className="py-4 text-sm text-zinc-300">Nenhuma receita ou despesa vencida ou próxima do vencimento.</p>
+                <p className="py-4 text-sm text-text-secondary">Nenhuma receita ou despesa vencida ou próxima do vencimento.</p>
               ) : (
-                <div className="divide-y divide-zinc-800">
+                <div className="divide-y divide-border">
                   {alerts.map((item) => (
                     <button
                       key={`${item.type}-${item.id}`}
                       type="button"
                       onClick={() => navigate(item.type === 'receivable' ? '/receivables' : '/payables')}
-                      className="flex w-full items-center justify-between gap-4 py-3 text-left transition-colors hover:bg-zinc-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                      className="flex w-full items-center justify-between gap-4 py-3 text-left transition-colors hover:bg-surface-alt/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-white">{item.description}</span>
-                        <span className="mt-1 block text-xs text-zinc-300">
+                        <span className="block truncate text-sm font-medium text-text-primary">{item.description}</span>
+                        <span className="mt-1 block text-xs text-text-secondary">
                           {item.label}{item.client_name ? ` · ${item.client_name}` : ''}
                           {' · '}
                           {item.days_remaining < 0
@@ -272,7 +272,7 @@ export function DashboardPage() {
                         </span>
                       </span>
                       <span className={`shrink-0 font-mono text-sm tabular-nums ${
-                        item.type === 'receivable' ? 'text-emerald-300' : 'text-rose-300'
+                        item.type === 'receivable' ? 'text-success' : 'text-error'
                       }`}>
                         {formatCurrency(item.amount_cents)}
                       </span>
@@ -286,10 +286,10 @@ export function DashboardPage() {
 
         {/* Projection Chart */}
         {dashboard?.projection_chart && dashboard.projection_chart.length > 0 && (
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-white flex items-center gap-2">
-                <LineChartIcon className="h-5 w-5 text-zinc-400" />
+              <CardTitle className="text-lg text-text-primary flex items-center gap-2">
+                <LineChartIcon className="h-5 w-5 text-text-secondary" />
                 Projeção de Saldo (30 dias)
               </CardTitle>
             </CardHeader>
@@ -306,39 +306,39 @@ export function DashboardPage() {
                   >
                     <defs>
                       <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="var(--success)" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="var(--success)" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis 
                       dataKey="date" 
-                      stroke="#71717a" 
+                      stroke="var(--text-secondary)"
                       fontSize={12}
                       tickLine={false}
                       interval="preserveStartEnd"
                     />
                     <YAxis 
-                      stroke="#71717a" 
+                      stroke="var(--text-secondary)"
                       fontSize={12}
                       tickLine={false}
                       tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: '#18181b', 
-                        border: '1px solid #27272a',
+                        backgroundColor: 'var(--surface)',
+                        border: '1px solid var(--border)',
                         borderRadius: '8px',
-                        color: '#fff'
+                        color: 'var(--text-primary)'
                       }}
                       formatter={(value) => [formatCurrency(value * 100), 'Saldo']}
                       labelFormatter={(label) => `Data: ${label}`}
                     />
-                    <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="3 3" />
+                    <ReferenceLine y={0} stroke="var(--error)" strokeDasharray="3 3" />
                     <Area
                       type="monotone"
                       dataKey="balanceFormatted"
-                      stroke="#10b981"
+                      stroke="var(--success)"
                       strokeWidth={2}
                       fill="url(#balanceGradient)"
                     />
@@ -354,29 +354,29 @@ export function DashboardPage() {
           <Button
             onClick={() => navigate('/receivables')}
             variant="outline"
-            className="h-auto py-4 border-zinc-800 hover:bg-zinc-800/50 hover:border-zinc-700"
+            className="h-auto py-4 border-border hover:bg-surface-alt hover:border-border"
             data-testid="add-receivable-btn"
           >
-            <ArrowDownCircle className="h-5 w-5 mr-2 text-emerald-500" />
-            <span className="text-white">Nova Receita</span>
+            <ArrowDownCircle className="h-5 w-5 mr-2 text-success" />
+            <span className="text-text-primary">Nova Receita</span>
           </Button>
           <Button
             onClick={() => navigate('/payables')}
             variant="outline"
-            className="h-auto py-4 border-zinc-800 hover:bg-zinc-800/50 hover:border-zinc-700"
+            className="h-auto py-4 border-border hover:bg-surface-alt hover:border-border"
             data-testid="add-payable-btn"
           >
-            <ArrowUpCircle className="h-5 w-5 mr-2 text-rose-500" />
-            <span className="text-white">Nova Despesa</span>
+            <ArrowUpCircle className="h-5 w-5 mr-2 text-error" />
+            <span className="text-text-primary">Nova Despesa</span>
           </Button>
         </div>
 
         {/* Timeline */}
-        <Card className="bg-[#18181b] border-zinc-800">
+        <Card className="bg-surface border-border">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg text-white flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-zinc-400" />
+              <CardTitle className="text-lg text-text-primary flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-text-secondary" />
                 Próximos 7 dias
               </CardTitle>
             </div>
@@ -384,9 +384,9 @@ export function DashboardPage() {
           <CardContent>
             {dashboard?.timeline_7d?.length === 0 ? (
               <div className="text-center py-8">
-                <Clock className="h-10 w-10 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400">Nenhum compromisso nos próximos 7 dias</p>
-                <p className="text-zinc-500 text-sm mt-1">
+                <Clock className="h-10 w-10 text-text-secondary mx-auto mb-3" />
+                <p className="text-text-secondary">Nenhum compromisso nos próximos 7 dias</p>
+                <p className="text-text-secondary text-sm mt-1">
                   Adicione receitas ou despesas para ver a timeline
                 </p>
               </div>
@@ -395,23 +395,23 @@ export function DashboardPage() {
                 {dashboard?.timeline_7d?.map((item) => (
                   <div
                     key={`${item.type}-${item.id}`}
-                    className="flex items-center justify-between p-4 rounded-lg bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                    className="flex items-center justify-between p-4 rounded-lg bg-surface-alt border border-border hover:border-border transition-colors"
                     data-testid={`timeline-item-${item.id}`}
                   >
                     <div className="flex items-center gap-4">
                       <div className={cn(
                         'p-2 rounded-lg',
-                        item.type === 'receivable' ? 'bg-emerald-500/10' : 'bg-rose-500/10'
+                        item.type === 'receivable' ? 'bg-success-background' : 'bg-error-background'
                       )}>
                         {item.type === 'receivable' ? (
-                          <ArrowDownCircle className="h-5 w-5 text-emerald-500" />
+                          <ArrowDownCircle className="h-5 w-5 text-success" />
                         ) : (
-                          <ArrowUpCircle className="h-5 w-5 text-rose-500" />
+                          <ArrowUpCircle className="h-5 w-5 text-error" />
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-white">{item.description}</p>
-                        <p className="text-sm text-zinc-500">
+                        <p className="font-medium text-text-primary">{item.description}</p>
+                        <p className="text-sm text-text-secondary">
                           {item.client_name || item.category} • {getRelativeDate(item.due_date)}
                         </p>
                       </div>
@@ -419,7 +419,7 @@ export function DashboardPage() {
                     <div className="flex items-center gap-4">
                       <p className={cn(
                         'font-mono font-medium tabular-nums',
-                        item.type === 'receivable' ? 'text-emerald-500' : 'text-rose-500'
+                        item.type === 'receivable' ? 'text-success' : 'text-error'
                       )}>
                         {item.type === 'receivable' ? '+' : '-'}{formatCurrency(item.amount_cents)}
                       </p>
@@ -428,7 +428,7 @@ export function DashboardPage() {
                         variant="ghost"
                         onClick={() => handleMarkPaid(item.type, item.id)}
                         disabled={markingPaid === item.id}
-                        className="text-zinc-400 hover:text-emerald-500 hover:bg-emerald-500/10"
+                        className="text-text-secondary hover:text-brand-hover hover:bg-success-background"
                         data-testid={`mark-paid-${item.id}`}
                       >
                         {markingPaid === item.id ? (

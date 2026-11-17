@@ -11,7 +11,7 @@ Store legal/display name, optional trade name, CPF/CNPJ, email, phone, company c
 
 ## Direction contract
 THESIS: Treat a client record as a reusable business identity, not a one-off text field.
-OWN-WORLD: Inherit the existing zinc-and-emerald application UI, typography, and components.
+OWN-WORLD: Inherit the Elegant Burgundy application UI, typography, and components.
 STORY: Search the register, identify an individual or company, open its record, then save an accurate set of reusable details.
 FIRST VIEWPORT: Put the page title and create action above a compact count, search/type filters, and a readable client register; use a focused form grouped by identity, contact, address, and notes.
 FORM: Searchable register plus separate create/edit form, following the established proposals workflow.

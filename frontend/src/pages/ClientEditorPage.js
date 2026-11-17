@@ -141,8 +141,8 @@ export function ClientEditorPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex min-h-64 items-center justify-center text-zinc-400" role="status">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin text-emerald-500" />
+        <div className="flex min-h-64 items-center justify-center text-text-secondary" role="status">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-brand-primary" />
           Carregando cliente...
         </div>
       </Layout>
@@ -152,13 +152,13 @@ export function ClientEditorPage() {
   if (loadError) {
     return (
       <Layout>
-        <div className="mx-auto max-w-4xl rounded-xl border border-rose-500/30 bg-rose-500/5 p-6 text-center">
-          <p className="text-sm text-rose-200" role="alert">{loadError}</p>
+        <div className="mx-auto max-w-4xl rounded-xl border border-error/30 bg-error-background p-6 text-center">
+          <p className="text-sm text-error" role="alert">{loadError}</p>
           <div className="mt-4 flex justify-center gap-3">
-            <Button onClick={() => navigate('/clients')} variant="outline" className="border-zinc-700 text-zinc-200 hover:bg-zinc-800">
+            <Button onClick={() => navigate('/clients')} variant="outline" className="border-border text-text-secondary hover:bg-surface-alt">
               Voltar aos clientes
             </Button>
-            <Button onClick={loadClient} variant="outline" className="border-zinc-700 text-zinc-200 hover:bg-zinc-800">
+            <Button onClick={loadClient} variant="outline" className="border-border text-text-secondary hover:bg-surface-alt">
               Tentar novamente
             </Button>
           </div>
@@ -169,54 +169,54 @@ export function ClientEditorPage() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-4xl space-y-6 selection:bg-emerald-500/30 selection:text-emerald-100" data-testid="client-editor-page">
+      <div className="mx-auto max-w-4xl space-y-6 selection:bg-brand-light selection:text-brand-primary" data-testid="client-editor-page">
         <header>
           <Button
             type="button"
             variant="ghost"
             onClick={() => navigate('/clients')}
-            className="-ml-3 mb-2 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+            className="-ml-3 mb-2 text-text-secondary hover:bg-surface-alt hover:text-text-primary"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar aos clientes
           </Button>
-          <h1 className="text-2xl font-bold text-white lg:text-3xl">
+          <h1 className="text-2xl font-bold text-text-primary lg:text-3xl">
             {isEditing ? 'Editar cliente' : 'Novo cliente'}
           </h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-text-secondary">
             Cadastre os dados de identificação, contato e endereço para reutilizar depois.
           </p>
         </header>
 
         {error && (
-          <div role="alert" className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          <div role="alert" className="rounded-lg border border-error/30 bg-error-background px-4 py-3 text-sm text-error">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          <section className="space-y-5 rounded-xl border border-zinc-800 bg-[#18181b] p-5 sm:p-6">
+          <section className="space-y-5 rounded-xl border border-border bg-surface p-5 sm:p-6">
             <div>
-              <h2 className="text-lg font-semibold text-white">Identificação</h2>
-              <p className="mt-1 text-sm text-zinc-400">
+              <h2 className="text-lg font-semibold text-text-primary">Identificação</h2>
+              <p className="mt-1 text-sm text-text-secondary">
                 CPF ou CNPJ é obrigatório e será validado antes de salvar.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="client-person-type" className="text-zinc-300">Tipo de cliente *</Label>
+                <Label htmlFor="client-person-type" className="text-text-secondary">Tipo de cliente *</Label>
                 <select
                   id="client-person-type"
                   value={form.person_type}
                   onChange={(event) => handlePersonTypeChange(event.target.value)}
-                  className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-text-primary outline-none focus:ring-2 focus:ring-focus"
                 >
                   <option value="PF">Pessoa física (PF)</option>
                   <option value="PJ">Pessoa jurídica (PJ)</option>
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="client-document" className="text-zinc-300">
+                <Label htmlFor="client-document" className="text-text-secondary">
                   {form.person_type === 'PF' ? 'CPF *' : 'CNPJ *'}
                 </Label>
                 <Input
@@ -231,11 +231,11 @@ export function ClientEditorPage() {
                   inputMode={form.person_type === 'PF' ? 'numeric' : 'text'}
                   maxLength={form.person_type === 'PF' ? 14 : 18}
                   placeholder={form.person_type === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'}
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400 placeholder:text-zinc-500"
+                  className="border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
                 />
               </div>
               <div className={`space-y-2 ${form.person_type === 'PJ' ? '' : 'sm:col-span-2'}`}>
-                <Label htmlFor="client-name" className="text-zinc-300">
+                <Label htmlFor="client-name" className="text-text-secondary">
                   {form.person_type === 'PF' ? 'Nome completo *' : 'Razão social *'}
                 </Label>
                 <Input
@@ -245,46 +245,46 @@ export function ClientEditorPage() {
                   required
                   maxLength={200}
                   autoComplete={form.person_type === 'PF' ? 'name' : 'organization'}
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary"
                 />
               </div>
               {form.person_type === 'PJ' && (
                 <div className="space-y-2">
-                  <Label htmlFor="client-trade-name" className="text-zinc-300">Nome fantasia</Label>
+                  <Label htmlFor="client-trade-name" className="text-text-secondary">Nome fantasia</Label>
                   <Input
                     id="client-trade-name"
                     value={form.trade_name}
                     onChange={(event) => updateField('trade_name', event.target.value)}
                     maxLength={200}
                     autoComplete="organization-title"
-                    className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                    className="border-border bg-surface text-text-primary caret-brand-primary"
                   />
                 </div>
               )}
             </div>
           </section>
 
-          <section className="space-y-5 border-t border-zinc-800 pt-6">
+          <section className="space-y-5 border-t border-border pt-6">
             <div>
-              <h2 className="text-lg font-semibold text-white">Contato</h2>
-              <p className="mt-1 text-sm text-zinc-400">Use os canais principais para falar com este cliente.</p>
+              <h2 className="text-lg font-semibold text-text-primary">Contato</h2>
+              <p className="mt-1 text-sm text-text-secondary">Use os canais principais para falar com este cliente.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {form.person_type === 'PJ' && (
                 <div className="space-y-2">
-                  <Label htmlFor="client-contact-name" className="text-zinc-300">Pessoa de contato</Label>
+                  <Label htmlFor="client-contact-name" className="text-text-secondary">Pessoa de contato</Label>
                   <Input
                     id="client-contact-name"
                     value={form.contact_name}
                     onChange={(event) => updateField('contact_name', event.target.value)}
                     maxLength={200}
                     autoComplete="name"
-                    className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                    className="border-border bg-surface text-text-primary caret-brand-primary"
                   />
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="client-email" className="text-zinc-300">E-mail</Label>
+                <Label htmlFor="client-email" className="text-text-secondary">E-mail</Label>
                 <Input
                   id="client-email"
                   type="email"
@@ -292,11 +292,11 @@ export function ClientEditorPage() {
                   onChange={(event) => updateField('email', event.target.value)}
                   maxLength={254}
                   autoComplete="email"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="client-phone" className="text-zinc-300">Telefone</Label>
+                <Label htmlFor="client-phone" className="text-text-secondary">Telefone</Label>
                 <Input
                   id="client-phone"
                   type="tel"
@@ -305,20 +305,20 @@ export function ClientEditorPage() {
                   maxLength={30}
                   autoComplete="tel"
                   placeholder="(00) 00000-0000"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400 placeholder:text-zinc-500"
+                  className="border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
                 />
               </div>
             </div>
           </section>
 
-          <section className="space-y-5 border-t border-zinc-800 pt-6">
+          <section className="space-y-5 border-t border-border pt-6">
             <div>
-              <h2 className="text-lg font-semibold text-white">Endereço</h2>
-              <p className="mt-1 text-sm text-zinc-400">Todos os campos de endereço são opcionais.</p>
+              <h2 className="text-lg font-semibold text-text-primary">Endereço</h2>
+              <p className="mt-1 text-sm text-text-secondary">Todos os campos de endereço são opcionais.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-6">
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="client-postal-code" className="text-zinc-300">CEP</Label>
+                <Label htmlFor="client-postal-code" className="text-text-secondary">CEP</Label>
                 <Input
                   id="client-postal-code"
                   value={form.postal_code}
@@ -327,108 +327,108 @@ export function ClientEditorPage() {
                   maxLength={9}
                   autoComplete="postal-code"
                   placeholder="00000-000"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400 placeholder:text-zinc-500"
+                  className="border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
                 />
               </div>
               <div className="space-y-2 sm:col-span-4">
-                <Label htmlFor="client-street" className="text-zinc-300">Logradouro</Label>
+                <Label htmlFor="client-street" className="text-text-secondary">Logradouro</Label>
                 <Input
                   id="client-street"
                   value={form.street}
                   onChange={(event) => updateField('street', event.target.value)}
                   maxLength={200}
                   autoComplete="address-line1"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary"
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="client-number" className="text-zinc-300">Número</Label>
+                <Label htmlFor="client-number" className="text-text-secondary">Número</Label>
                 <Input
                   id="client-number"
                   value={form.number}
                   onChange={(event) => updateField('number', event.target.value)}
                   maxLength={30}
                   autoComplete="address-line2"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary"
                 />
               </div>
               <div className="space-y-2 sm:col-span-4">
-                <Label htmlFor="client-complement" className="text-zinc-300">Complemento</Label>
+                <Label htmlFor="client-complement" className="text-text-secondary">Complemento</Label>
                 <Input
                   id="client-complement"
                   value={form.complement}
                   onChange={(event) => updateField('complement', event.target.value)}
                   maxLength={120}
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary"
                 />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="client-district" className="text-zinc-300">Bairro</Label>
+                <Label htmlFor="client-district" className="text-text-secondary">Bairro</Label>
                 <Input
                   id="client-district"
                   value={form.district}
                   onChange={(event) => updateField('district', event.target.value)}
                   maxLength={120}
                   autoComplete="address-level3"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary"
                 />
               </div>
               <div className="space-y-2 sm:col-span-3">
-                <Label htmlFor="client-city" className="text-zinc-300">Cidade</Label>
+                <Label htmlFor="client-city" className="text-text-secondary">Cidade</Label>
                 <Input
                   id="client-city"
                   value={form.city}
                   onChange={(event) => updateField('city', event.target.value)}
                   maxLength={120}
                   autoComplete="address-level2"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary"
                 />
               </div>
               <div className="space-y-2 sm:col-span-1">
-                <Label htmlFor="client-state" className="text-zinc-300">UF</Label>
+                <Label htmlFor="client-state" className="text-text-secondary">UF</Label>
                 <Input
                   id="client-state"
                   value={form.state}
                   onChange={(event) => updateField('state', event.target.value.toUpperCase().slice(0, 2))}
                   maxLength={2}
                   autoComplete="address-level1"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary"
                 />
               </div>
             </div>
           </section>
 
-          <section className="space-y-4 border-t border-zinc-800 pt-6">
+          <section className="space-y-4 border-t border-border pt-6">
             <div>
-              <h2 className="text-lg font-semibold text-white">Observações</h2>
-              <p className="mt-1 text-sm text-zinc-400">Anotações internas sobre o relacionamento com o cliente.</p>
+              <h2 className="text-lg font-semibold text-text-primary">Observações</h2>
+              <p className="mt-1 text-sm text-text-secondary">Anotações internas sobre o relacionamento com o cliente.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="client-notes" className="text-zinc-300">Anotações</Label>
+              <Label htmlFor="client-notes" className="text-text-secondary">Anotações</Label>
               <Textarea
                 id="client-notes"
                 value={form.notes}
                 onChange={(event) => updateField('notes', event.target.value)}
                 maxLength={3000}
                 rows={4}
-                className="resize-y border-zinc-700 bg-zinc-900 text-white caret-emerald-400 placeholder:text-zinc-400"
+                className="resize-y border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
               />
             </div>
           </section>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-zinc-800 pt-5 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => navigate('/clients')}
-              className="border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+              className="border-border text-text-secondary hover:bg-surface-alt"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={submitting}
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              className="bg-brand-primary text-text-inverse hover:bg-brand-hover"
             >
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {submitting ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Salvar cliente'}

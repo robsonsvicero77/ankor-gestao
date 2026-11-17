@@ -237,12 +237,12 @@ export function ReceivablesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-white">Receitas a Receber</h1>
-            <p className="text-zinc-400 text-sm mt-1">Gerencie suas receitas pendentes</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">Receitas a Receber</h1>
+            <p className="text-text-secondary text-sm mt-1">Gerencie suas receitas pendentes</p>
           </div>
           <Button
             onClick={openCreateDialog}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white btn-press"
+            className="bg-brand-primary hover:bg-brand-hover text-text-inverse btn-press"
             data-testid="create-receivable-btn"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -252,31 +252,31 @@ export function ReceivablesPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Pendente</span>
-                <span className="text-lg font-bold font-mono text-amber-500">
+                <span className="text-sm text-text-secondary">Pendente</span>
+                <span className="text-lg font-bold font-mono text-warning">
                   {formatCurrency(totals.pending)}
                 </span>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Atrasado</span>
-                <span className="text-lg font-bold font-mono text-red-500">
+                <span className="text-sm text-text-secondary">Atrasado</span>
+                <span className="text-lg font-bold font-mono text-error">
                   {formatCurrency(totals.overdue)}
                 </span>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Recebido</span>
-                <span className="text-lg font-bold font-mono text-emerald-500">
+                <span className="text-sm text-text-secondary">Recebido</span>
+                <span className="text-lg font-bold font-mono text-success">
                   {formatCurrency(totals.paid)}
                 </span>
               </div>
@@ -287,21 +287,21 @@ export function ReceivablesPage() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
             <Input
               placeholder="Buscar receitas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               data-testid="search-receivables-input"
-              className="pl-10 bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500"
+              className="pl-10 bg-surface border-border text-text-primary placeholder:text-text-secondary"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48 bg-zinc-900/50 border-zinc-800 text-white" data-testid="status-filter-select">
-              <Filter className="h-4 w-4 mr-2 text-zinc-500" />
+            <SelectTrigger className="w-full sm:w-48 bg-surface border-border text-text-primary" data-testid="status-filter-select">
+              <Filter className="h-4 w-4 mr-2 text-text-secondary" />
               <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectContent className="bg-surface border-border">
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="PENDENTE">Pendente</SelectItem>
               <SelectItem value="ATRASADO">Atrasado</SelectItem>
@@ -311,44 +311,44 @@ export function ReceivablesPage() {
         </div>
 
         {/* List */}
-        <Card className="bg-[#18181b] border-zinc-800">
+        <Card className="bg-surface border-border">
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+                <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
               </div>
             ) : filteredReceivables.length === 0 ? (
               <div className="text-center py-12">
-                <ArrowDownCircle className="h-12 w-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400">Nenhuma receita encontrada</p>
-                <p className="text-zinc-500 text-sm mt-1">
+                <ArrowDownCircle className="h-12 w-12 text-text-secondary mx-auto mb-3" />
+                <p className="text-text-secondary">Nenhuma receita encontrada</p>
+                <p className="text-text-secondary text-sm mt-1">
                   {receivables.length === 0 
                     ? 'Comece adicionando sua primeira receita'
                     : 'Tente ajustar os filtros'}
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-zinc-800">
+              <div className="divide-y divide-border">
                 {filteredReceivables.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors"
+                    className="flex items-center justify-between p-4 hover:bg-surface-alt/30 transition-colors"
                     data-testid={`receivable-item-${item.id}`}
                   >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="p-2 rounded-lg bg-emerald-500/10">
-                        <ArrowDownCircle className="h-5 w-5 text-emerald-500" />
+                      <div className="p-2 rounded-lg bg-success-background">
+                        <ArrowDownCircle className="h-5 w-5 text-success" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white truncate">{item.description}</p>
-                        <p className="text-sm text-zinc-500 truncate">
+                        <p className="font-medium text-text-primary truncate">{item.description}</p>
+                        <p className="text-sm text-text-secondary truncate">
                           {item.client_name} • {getRelativeDate(item.due_date)}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="font-mono font-medium tabular-nums text-emerald-500">
+                        <p className="font-mono font-medium tabular-nums text-success">
                           {formatCurrency(item.amount_cents)}
                         </p>
                         <span className={cn(
@@ -365,7 +365,7 @@ export function ReceivablesPage() {
                             variant="ghost"
                             onClick={() => openReminderDialog(item)}
                             disabled={!clients.find((client) => client.id === item.client_id)?.email}
-                            className="h-8 w-8 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10"
+                            className="h-8 w-8 text-text-secondary hover:text-brand-secondary hover:bg-info-background"
                             title={clients.find((client) => client.id === item.client_id)?.email
                               ? 'Enviar lembrete ao cliente'
                               : 'Vincule um cliente cadastrado com e-mail'}
@@ -378,7 +378,7 @@ export function ReceivablesPage() {
                             variant="ghost"
                             onClick={() => handleMarkPaid(item.id)}
                             disabled={markingPaid === item.id}
-                            className="h-8 w-8 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-500/10"
+                            className="h-8 w-8 text-text-secondary hover:text-brand-hover hover:bg-success-background"
                             title="Marcar como pago"
                             data-testid={`mark-paid-btn-${item.id}`}
                           >
@@ -392,7 +392,7 @@ export function ReceivablesPage() {
                             size="icon"
                             variant="ghost"
                             onClick={() => openEditDialog(item)}
-                            className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                            className="h-8 w-8 text-text-secondary hover:text-text-primary hover:bg-surface-alt"
                             title="Editar"
                             data-testid={`edit-btn-${item.id}`}
                           >
@@ -402,7 +402,7 @@ export function ReceivablesPage() {
                             size="icon"
                             variant="ghost"
                             onClick={() => openDeleteDialog(item)}
-                            className="h-8 w-8 text-zinc-400 hover:text-red-500 hover:bg-red-500/10"
+                            className="h-8 w-8 text-text-secondary hover:text-error hover:bg-error-background"
                             title="Excluir"
                             data-testid={`delete-btn-${item.id}`}
                           >
@@ -420,12 +420,12 @@ export function ReceivablesPage() {
 
         {/* Create/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="bg-[#18181b] border-zinc-800 sm:max-w-md">
+          <DialogContent className="bg-surface border-border sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-white">
+              <DialogTitle className="text-text-primary">
                 {editingItem ? 'Editar Receita' : 'Nova Receita'}
               </DialogTitle>
-              <DialogDescription className="text-zinc-400">
+              <DialogDescription className="text-text-secondary">
                 {editingItem 
                   ? 'Atualize os dados da receita' 
                   : 'Preencha os dados para criar uma nova receita'}
@@ -433,7 +433,7 @@ export function ReceivablesPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-zinc-300">Descrição</Label>
+                <Label htmlFor="description" className="text-text-secondary">Descrição</Label>
                 <Input
                   id="description"
                   placeholder="Ex: Serviço de consultoria"
@@ -441,11 +441,11 @@ export function ReceivablesPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   required
                   data-testid="receivable-description-input"
-                  className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500"
+                  className="bg-surface border-border text-text-primary placeholder:text-text-secondary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="receivable-client-select" className="text-zinc-300">Cliente</Label>
+                <Label htmlFor="receivable-client-select" className="text-text-secondary">Cliente</Label>
                 <select
                   id="receivable-client-select"
                   value={formData.client_id}
@@ -457,7 +457,7 @@ export function ReceivablesPage() {
                       client_name: selected ? (selected.trade_name || selected.name) : '',
                     });
                   }}
-                  className="h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus/50"
                   data-testid="receivable-client-select"
                 >
                   <option value="">Informar nome manualmente (sem vínculo)</option>
@@ -468,7 +468,7 @@ export function ReceivablesPage() {
                   ))}
                 </select>
                 {formData.client_id ? (
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-text-secondary">
                     {clients.find((client) => client.id === formData.client_id)?.email
                       ? `Lembretes serão enviados para ${clients.find((client) => client.id === formData.client_id).email}.`
                       : 'Este cliente não tem e-mail cadastrado; lembretes por e-mail ficarão indisponíveis.'}
@@ -481,12 +481,12 @@ export function ReceivablesPage() {
                     onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
                     required
                     data-testid="receivable-client-input"
-                    className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500"
+                    className="bg-surface border-border text-text-primary placeholder:text-text-secondary"
                   />
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount" className="text-zinc-300">Valor (R$)</Label>
+                <Label htmlFor="amount" className="text-text-secondary">Valor (R$)</Label>
                 <Input
                   id="amount"
                   type="text"
@@ -496,11 +496,11 @@ export function ReceivablesPage() {
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value.replace(/[^\d,]/g, '') })}
                   required
                   data-testid="receivable-amount-input"
-                  className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500 font-mono"
+                  className="bg-surface border-border text-text-primary placeholder:text-text-secondary font-mono"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="due_date" className="text-zinc-300">Data de Vencimento</Label>
+                <Label htmlFor="due_date" className="text-text-secondary">Data de Vencimento</Label>
                 <Input
                   id="due_date"
                   type="date"
@@ -508,17 +508,17 @@ export function ReceivablesPage() {
                   onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                   required
                   data-testid="receivable-date-input"
-                  className="bg-zinc-900/50 border-zinc-800 text-white"
+                  className="bg-surface border-border text-text-primary"
                 />
               </div>
               
               {/* Recurrence Section */}
               {!editingItem && (
-                <div className="space-y-4 pt-4 border-t border-zinc-800">
+                <div className="space-y-4 pt-4 border-t border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Repeat className="h-4 w-4 text-zinc-400" />
-                      <Label htmlFor="is_recurring" className="text-zinc-300">Receita Recorrente</Label>
+                      <Repeat className="h-4 w-4 text-text-secondary" />
+                      <Label htmlFor="is_recurring" className="text-text-secondary">Receita Recorrente</Label>
                     </div>
                     <Switch
                       id="is_recurring"
@@ -535,15 +535,15 @@ export function ReceivablesPage() {
                   {formData.is_recurring && (
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="text-zinc-300 text-sm">Frequência</Label>
+                        <Label className="text-text-secondary text-sm">Frequência</Label>
                         <Select 
                           value={formData.recurrence_type} 
                           onValueChange={(v) => setFormData({...formData, recurrence_type: v})}
                         >
-                          <SelectTrigger className="bg-zinc-900/50 border-zinc-800 text-white" data-testid="recurrence-type-select">
+                          <SelectTrigger className="bg-surface border-border text-text-primary" data-testid="recurrence-type-select">
                             <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
-                          <SelectContent className="bg-zinc-900 border-zinc-800">
+                          <SelectContent className="bg-surface border-border">
                             <SelectItem value="weekly">Semanal</SelectItem>
                             <SelectItem value="monthly">Mensal</SelectItem>
                             <SelectItem value="yearly">Anual</SelectItem>
@@ -551,13 +551,13 @@ export function ReceivablesPage() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-zinc-300 text-sm">Até (opcional)</Label>
+                        <Label className="text-text-secondary text-sm">Até (opcional)</Label>
                         <Input
                           type="date"
                           value={formData.recurrence_end_date}
                           onChange={(e) => setFormData({ ...formData, recurrence_end_date: e.target.value })}
                           data-testid="recurrence-end-date"
-                          className="bg-zinc-900/50 border-zinc-800 text-white"
+                          className="bg-surface border-border text-text-primary"
                         />
                       </div>
                     </div>
@@ -570,14 +570,14 @@ export function ReceivablesPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setDialogOpen(false)}
-                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  className="border-border text-text-secondary hover:bg-surface-alt"
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-brand-primary hover:bg-brand-hover text-text-inverse"
                   data-testid="save-receivable-btn"
                 >
                   {submitting ? (
@@ -596,13 +596,13 @@ export function ReceivablesPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="bg-[#18181b] border-zinc-800 sm:max-w-md">
+          <DialogContent className="bg-surface border-border sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+              <DialogTitle className="text-text-primary flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-error" />
                 Excluir Receita
               </DialogTitle>
-              <DialogDescription className="text-zinc-400">
+              <DialogDescription className="text-text-secondary">
                 Tem certeza que deseja excluir "{deletingItem?.description}"? 
                 Esta ação não pode ser desfeita.
               </DialogDescription>
@@ -612,14 +612,14 @@ export function ReceivablesPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setDeleteDialogOpen(false)}
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                className="border-border text-text-secondary hover:bg-surface-alt"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleDelete}
                 disabled={submitting}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-error hover:bg-error/90 active:bg-error/80 text-text-inverse"
                 data-testid="confirm-delete-btn"
               >
                 {submitting ? (
@@ -637,42 +637,42 @@ export function ReceivablesPage() {
 
         {/* Reminder Dialog */}
         <Dialog open={reminderDialogOpen} onOpenChange={setReminderDialogOpen}>
-          <DialogContent className="bg-[#18181b] border-zinc-800 sm:max-w-md">
+          <DialogContent className="bg-surface border-border sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                <Mail className="h-5 w-5 text-blue-500" />
+              <DialogTitle className="text-text-primary flex items-center gap-2">
+                <Mail className="h-5 w-5 text-brand-secondary" />
                 Enviar Lembrete de Pagamento
               </DialogTitle>
-              <DialogDescription className="text-zinc-400">
+              <DialogDescription className="text-text-secondary">
                 Envie um lembrete para o cliente sobre esta receita pendente.
               </DialogDescription>
             </DialogHeader>
             
             {reminderItem && !reminderResult && (
               <div className="space-y-4 py-2">
-                <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
-                  <p className="font-medium text-white">{reminderItem.description}</p>
-                  <p className="text-sm text-zinc-500 mt-1">
+                <div className="p-4 rounded-lg bg-surface-alt border border-border">
+                  <p className="font-medium text-text-primary">{reminderItem.description}</p>
+                  <p className="text-sm text-text-secondary mt-1">
                     Cliente: {reminderItem.client_name}
                   </p>
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-text-secondary">
                     Destinatário: {clients.find((client) => client.id === reminderItem.client_id)?.email || 'e-mail indisponível'}
                   </p>
-                  <p className="text-lg font-mono font-bold text-emerald-500 mt-2">
+                  <p className="text-lg font-mono font-bold text-success mt-2">
                     {formatCurrency(reminderItem.amount_cents)}
                   </p>
-                  <p className="text-xs text-zinc-500 mt-1">
+                  <p className="text-xs text-text-secondary mt-1">
                     Vencimento: {getRelativeDate(reminderItem.due_date)}
                   </p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-zinc-300">Mensagem personalizada (opcional)</Label>
+                  <Label className="text-text-secondary">Mensagem personalizada (opcional)</Label>
                   <Textarea
                     placeholder="Adicione uma mensagem personalizada ao lembrete..."
                     value={reminderMessage}
                     onChange={(e) => setReminderMessage(e.target.value)}
-                    className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500 min-h-[80px]"
+                    className="bg-surface border-border text-text-primary placeholder:text-text-secondary min-h-[80px]"
                     data-testid="reminder-message-input"
                   />
                 </div>
@@ -683,22 +683,22 @@ export function ReceivablesPage() {
               <div className={cn(
                 'p-4 rounded-lg flex items-start gap-3 my-4',
                 reminderResult.success 
-                  ? 'bg-emerald-500/10 border border-emerald-500/20'
-                  : 'bg-red-500/10 border border-red-500/20'
+                  ? 'bg-success-background border border-success/20'
+                  : 'bg-error-background border border-error/30'
               )}>
                 {reminderResult.success ? (
-                  <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
                 ) : (
-                  <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="h-5 w-5 text-error flex-shrink-0 mt-0.5" />
                 )}
                 <div>
                   <p className={cn(
                     'font-medium',
-                    reminderResult.success ? 'text-emerald-500' : 'text-red-500'
+                    reminderResult.success ? 'text-success' : 'text-error'
                   )}>
                     {reminderResult.success ? 'Lembrete enviado!' : 'Erro ao enviar'}
                   </p>
-                  <p className="text-sm text-zinc-400 mt-1">{reminderResult.message}</p>
+                  <p className="text-sm text-text-secondary mt-1">{reminderResult.message}</p>
                 </div>
               </div>
             )}
@@ -710,7 +710,7 @@ export function ReceivablesPage() {
                     setReminderDialogOpen(false);
                     setReminderResult(null);
                   }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-brand-primary hover:bg-brand-hover text-text-inverse"
                 >
                   Fechar
                 </Button>
@@ -720,14 +720,14 @@ export function ReceivablesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setReminderDialogOpen(false)}
-                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    className="border-border text-text-secondary hover:bg-surface-alt"
                   >
                     Cancelar
                   </Button>
                   <Button
                     onClick={handleSendReminder}
                     disabled={sendingReminder}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-brand-primary hover:bg-brand-hover text-text-inverse"
                     data-testid="send-reminder-btn"
                   >
                     {sendingReminder ? (

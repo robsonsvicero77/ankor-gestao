@@ -47,18 +47,18 @@ export function OnboardingPage() {
 
   if (step === 2) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#09090b] p-4">
-        <Card className="w-full max-w-md bg-[#18181b] border-zinc-800 text-center">
+      <div className="min-h-screen flex items-center justify-center bg-surface-background p-4">
+        <Card className="w-full max-w-md bg-surface border-border text-center">
           <CardContent className="pt-8 pb-8">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="h-8 w-8 text-emerald-500" />
+            <div className="w-16 h-16 rounded-full bg-success-background flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="h-8 w-8 text-success" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Tudo pronto!</h2>
-            <p className="text-zinc-400 mb-4">
+            <h2 className="text-2xl font-bold text-text-primary mb-2">Tudo pronto!</h2>
+            <p className="text-text-secondary mb-4">
               Seu saldo inicial foi configurado. Redirecionando para o dashboard...
             </p>
             <div className="flex justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+              <Loader2 className="h-5 w-5 animate-spin text-brand-primary" />
             </div>
           </CardContent>
         </Card>
@@ -67,30 +67,30 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#09090b] p-4">
-      <Card className="w-full max-w-md bg-[#18181b] border-zinc-800">
+    <div className="min-h-screen flex items-center justify-center bg-surface-background p-4">
+      <Card className="w-full max-w-md bg-surface border-border">
         <CardHeader className="text-center">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-            <Wallet className="h-6 w-6 text-emerald-500" />
+          <div className="w-12 h-12 rounded-full bg-success-background flex items-center justify-center mx-auto mb-4">
+            <Wallet className="h-6 w-6 text-success" />
           </div>
-          <CardTitle className="text-2xl text-white">Qual é o seu saldo atual?</CardTitle>
-          <CardDescription className="text-zinc-400">
+          <CardTitle className="text-2xl text-text-primary">Qual é o seu saldo atual?</CardTitle>
+          <CardDescription className="text-text-secondary">
             Informe o saldo que você tem disponível hoje para começarmos a monitorar suas finanças.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-error-background border border-error/30 text-error text-sm">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 {error}
               </div>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="balance" className="text-zinc-300">Saldo atual (R$)</Label>
+              <Label htmlFor="balance" className="text-text-secondary">Saldo atual (R$)</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">R$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg">R$</span>
                 <Input
                   id="balance"
                   type="text"
@@ -99,18 +99,18 @@ export function OnboardingPage() {
                   value={balanceInput}
                   onChange={handleBalanceChange}
                   data-testid="onboarding-balance-input"
-                  className="bg-zinc-900/50 border-zinc-800 focus:border-emerald-500 text-white placeholder:text-zinc-500 pl-12 text-xl font-mono h-14"
+                  className="bg-surface border-border focus:border-focus text-text-primary placeholder:text-text-secondary pl-12 text-xl font-mono h-14"
                 />
               </div>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-text-secondary">
                 Pode ser zero ou negativo se você estiver no vermelho
               </p>
             </div>
 
             {balanceInput && (
-              <div className="p-4 rounded-lg bg-zinc-900/50 border border-zinc-800">
-                <p className="text-sm text-zinc-400 mb-1">Saldo a ser registrado:</p>
-                <p className="text-2xl font-bold text-emerald-500 font-mono">
+              <div className="p-4 rounded-lg bg-surface-alt border border-border">
+                <p className="text-sm text-text-secondary mb-1">Saldo a ser registrado:</p>
+                <p className="text-2xl font-bold text-success font-mono">
                   {formatCurrency(parseCurrencyToCents(balanceInput || '0'))}
                 </p>
               </div>
@@ -120,7 +120,7 @@ export function OnboardingPage() {
               type="submit"
               disabled={loading}
               data-testid="onboarding-submit-btn"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white btn-press h-12"
+              className="w-full bg-brand-primary hover:bg-brand-hover text-text-inverse btn-press h-12"
             >
               {loading ? (
                 <>

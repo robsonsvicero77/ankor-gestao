@@ -208,12 +208,12 @@ export function PayablesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-white">Despesas a Pagar</h1>
-            <p className="text-zinc-400 text-sm mt-1">Gerencie suas despesas pendentes</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">Despesas a Pagar</h1>
+            <p className="text-text-secondary text-sm mt-1">Gerencie suas despesas pendentes</p>
           </div>
           <Button
             onClick={openCreateDialog}
-            className="bg-rose-600 hover:bg-rose-700 text-white btn-press"
+            className="bg-brand-primary hover:bg-brand-hover text-text-inverse btn-press"
             data-testid="create-payable-btn"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -223,31 +223,31 @@ export function PayablesPage() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Pendente</span>
-                <span className="text-lg font-bold font-mono text-amber-500">
+                <span className="text-sm text-text-secondary">Pendente</span>
+                <span className="text-lg font-bold font-mono text-warning">
                   {formatCurrency(totals.pending)}
                 </span>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Atrasado</span>
-                <span className="text-lg font-bold font-mono text-red-500">
+                <span className="text-sm text-text-secondary">Atrasado</span>
+                <span className="text-lg font-bold font-mono text-error">
                   {formatCurrency(totals.overdue)}
                 </span>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Pago</span>
-                <span className="text-lg font-bold font-mono text-emerald-500">
+                <span className="text-sm text-text-secondary">Pago</span>
+                <span className="text-lg font-bold font-mono text-success">
                   {formatCurrency(totals.paid)}
                 </span>
               </div>
@@ -258,21 +258,21 @@ export function PayablesPage() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
             <Input
               placeholder="Buscar despesas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               data-testid="search-payables-input"
-              className="pl-10 bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500"
+              className="pl-10 bg-surface border-border text-text-primary placeholder:text-text-secondary"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48 bg-zinc-900/50 border-zinc-800 text-white" data-testid="status-filter-select">
-              <Filter className="h-4 w-4 mr-2 text-zinc-500" />
+            <SelectTrigger className="w-full sm:w-48 bg-surface border-border text-text-primary" data-testid="status-filter-select">
+              <Filter className="h-4 w-4 mr-2 text-text-secondary" />
               <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectContent className="bg-surface border-border">
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="PENDENTE">Pendente</SelectItem>
               <SelectItem value="ATRASADO">Atrasado</SelectItem>
@@ -282,44 +282,44 @@ export function PayablesPage() {
         </div>
 
         {/* List */}
-        <Card className="bg-[#18181b] border-zinc-800">
+        <Card className="bg-surface border-border">
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-rose-500" />
+                <Loader2 className="h-8 w-8 animate-spin text-error" />
               </div>
             ) : filteredPayables.length === 0 ? (
               <div className="text-center py-12">
-                <ArrowUpCircle className="h-12 w-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400">Nenhuma despesa encontrada</p>
-                <p className="text-zinc-500 text-sm mt-1">
+                <ArrowUpCircle className="h-12 w-12 text-text-secondary mx-auto mb-3" />
+                <p className="text-text-secondary">Nenhuma despesa encontrada</p>
+                <p className="text-text-secondary text-sm mt-1">
                   {payables.length === 0 
                     ? 'Comece adicionando sua primeira despesa'
                     : 'Tente ajustar os filtros'}
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-zinc-800">
+              <div className="divide-y divide-border">
                 {filteredPayables.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors"
+                    className="flex items-center justify-between p-4 hover:bg-surface-alt/30 transition-colors"
                     data-testid={`payable-item-${item.id}`}
                   >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="p-2 rounded-lg bg-rose-500/10">
-                        <ArrowUpCircle className="h-5 w-5 text-rose-500" />
+                      <div className="p-2 rounded-lg bg-error-background">
+                        <ArrowUpCircle className="h-5 w-5 text-error" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white truncate">{item.description}</p>
-                        <p className="text-sm text-zinc-500 truncate">
+                        <p className="font-medium text-text-primary truncate">{item.description}</p>
+                        <p className="text-sm text-text-secondary truncate">
                           {getCategoryLabel(item.category)} • {getRelativeDate(item.due_date)}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="font-mono font-medium tabular-nums text-rose-500">
+                        <p className="font-mono font-medium tabular-nums text-error">
                           {formatCurrency(item.amount_cents)}
                         </p>
                         <span className={cn(
@@ -336,7 +336,7 @@ export function PayablesPage() {
                             variant="ghost"
                             onClick={() => handleMarkPaid(item.id)}
                             disabled={markingPaid === item.id}
-                            className="h-8 w-8 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-500/10"
+                            className="h-8 w-8 text-text-secondary hover:text-brand-hover hover:bg-success-background"
                             title="Marcar como pago"
                             data-testid={`mark-paid-btn-${item.id}`}
                           >
@@ -350,7 +350,7 @@ export function PayablesPage() {
                             size="icon"
                             variant="ghost"
                             onClick={() => openEditDialog(item)}
-                            className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-zinc-800"
+                            className="h-8 w-8 text-text-secondary hover:text-text-primary hover:bg-surface-alt"
                             title="Editar"
                             data-testid={`edit-btn-${item.id}`}
                           >
@@ -360,7 +360,7 @@ export function PayablesPage() {
                             size="icon"
                             variant="ghost"
                             onClick={() => openDeleteDialog(item)}
-                            className="h-8 w-8 text-zinc-400 hover:text-red-500 hover:bg-red-500/10"
+                            className="h-8 w-8 text-text-secondary hover:text-error hover:bg-error-background"
                             title="Excluir"
                             data-testid={`delete-btn-${item.id}`}
                           >
@@ -378,12 +378,12 @@ export function PayablesPage() {
 
         {/* Create/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="bg-[#18181b] border-zinc-800 sm:max-w-md">
+          <DialogContent className="bg-surface border-border sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-white">
+              <DialogTitle className="text-text-primary">
                 {editingItem ? 'Editar Despesa' : 'Nova Despesa'}
               </DialogTitle>
-              <DialogDescription className="text-zinc-400">
+              <DialogDescription className="text-text-secondary">
                 {editingItem 
                   ? 'Atualize os dados da despesa' 
                   : 'Preencha os dados para criar uma nova despesa'}
@@ -391,7 +391,7 @@ export function PayablesPage() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-zinc-300">Descrição</Label>
+                <Label htmlFor="description" className="text-text-secondary">Descrição</Label>
                 <Input
                   id="description"
                   placeholder="Ex: Aluguel do escritório"
@@ -399,20 +399,20 @@ export function PayablesPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   required
                   data-testid="payable-description-input"
-                  className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500"
+                  className="bg-surface border-border text-text-primary placeholder:text-text-secondary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category" className="text-zinc-300">Categoria</Label>
+                <Label htmlFor="category" className="text-text-secondary">Categoria</Label>
                 <Select 
                   value={formData.category} 
                   onValueChange={(value) => setFormData({ ...formData, category: value })}
                   required
                 >
-                  <SelectTrigger className="bg-zinc-900/50 border-zinc-800 text-white" data-testid="payable-category-select">
+                  <SelectTrigger className="bg-surface border-border text-text-primary" data-testid="payable-category-select">
                     <SelectValue placeholder="Selecione uma categoria" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent className="bg-surface border-border">
                     {CATEGORIES.map((cat) => (
                       <SelectItem key={cat.value} value={cat.value}>
                         {cat.label}
@@ -422,7 +422,7 @@ export function PayablesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount" className="text-zinc-300">Valor (R$)</Label>
+                <Label htmlFor="amount" className="text-text-secondary">Valor (R$)</Label>
                 <Input
                   id="amount"
                   type="text"
@@ -432,11 +432,11 @@ export function PayablesPage() {
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value.replace(/[^\d,]/g, '') })}
                   required
                   data-testid="payable-amount-input"
-                  className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500 font-mono"
+                  className="bg-surface border-border text-text-primary placeholder:text-text-secondary font-mono"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="due_date" className="text-zinc-300">Data de Vencimento</Label>
+                <Label htmlFor="due_date" className="text-text-secondary">Data de Vencimento</Label>
                 <Input
                   id="due_date"
                   type="date"
@@ -444,7 +444,7 @@ export function PayablesPage() {
                   onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
                   required
                   data-testid="payable-date-input"
-                  className="bg-zinc-900/50 border-zinc-800 text-white"
+                  className="bg-surface border-border text-text-primary"
                 />
               </div>
               <DialogFooter>
@@ -452,14 +452,14 @@ export function PayablesPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setDialogOpen(false)}
-                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  className="border-border text-text-secondary hover:bg-surface-alt"
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
                   disabled={submitting || !formData.category}
-                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                  className="bg-brand-primary hover:bg-brand-hover text-text-inverse"
                   data-testid="save-payable-btn"
                 >
                   {submitting ? (
@@ -478,13 +478,13 @@ export function PayablesPage() {
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent className="bg-[#18181b] border-zinc-800 sm:max-w-md">
+          <DialogContent className="bg-surface border-border sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-white flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+              <DialogTitle className="text-text-primary flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-error" />
                 Excluir Despesa
               </DialogTitle>
-              <DialogDescription className="text-zinc-400">
+              <DialogDescription className="text-text-secondary">
                 Tem certeza que deseja excluir "{deletingItem?.description}"? 
                 Esta ação não pode ser desfeita.
               </DialogDescription>
@@ -494,14 +494,14 @@ export function PayablesPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setDeleteDialogOpen(false)}
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                className="border-border text-text-secondary hover:bg-surface-alt"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleDelete}
                 disabled={submitting}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-error hover:bg-error/90 active:bg-error/80 text-text-inverse"
                 data-testid="confirm-delete-btn"
               >
                 {submitting ? (

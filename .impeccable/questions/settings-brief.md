@@ -10,7 +10,7 @@ Constraints: Currency remains BRL. The opening balance is editable only before a
 
 THESIS: Keep every account setting reachable without losing the active form or the user's financial context.
 
-OWN-WORLD: Continue the existing near-black canvas, zinc panels, emerald action states, and Lucide controls.
+OWN-WORLD: Continue the Elegant Burgundy design system: light neutral canvas, white surfaces, burgundy actions, semantic feedback colors, and Lucide controls.
 
 STORY: The user chooses a settings area, edits only its fields, sees whether changes are saved, and can correct mistakes before they affect documents or the ledger.
 

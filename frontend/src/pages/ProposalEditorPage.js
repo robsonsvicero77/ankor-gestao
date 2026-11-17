@@ -138,7 +138,7 @@ function getErrorMessage(error, fallback) {
 function Field({ id, label, children, className = '' }) {
   return (
     <div className={`space-y-2 ${className}`}>
-      <Label htmlFor={id} className="text-zinc-300">{label}</Label>
+      <Label htmlFor={id} className="text-text-secondary">{label}</Label>
       {children}
     </div>
   );
@@ -400,8 +400,8 @@ export function ProposalEditorPage() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex min-h-64 items-center justify-center text-zinc-400" role="status">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin text-emerald-500" />
+        <div className="flex min-h-64 items-center justify-center text-text-secondary" role="status">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-brand-primary" />
           Carregando proposta...
         </div>
       </Layout>
@@ -410,22 +410,22 @@ export function ProposalEditorPage() {
 
   return (
     <Layout>
-      <div className="mx-auto max-w-4xl space-y-6 selection:bg-emerald-500/30 selection:text-emerald-100" data-testid="proposal-editor-page">
+      <div className="mx-auto max-w-4xl space-y-6 selection:bg-brand-light selection:text-brand-primary" data-testid="proposal-editor-page">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <Button
               type="button"
               variant="ghost"
               onClick={() => navigate('/proposals')}
-              className="-ml-3 mb-2 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              className="-ml-3 mb-2 text-text-secondary hover:bg-surface-alt hover:text-text-primary"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar às propostas
             </Button>
-            <h1 className="text-2xl font-bold text-white lg:text-3xl">
+            <h1 className="text-2xl font-bold text-text-primary lg:text-3xl">
               {isEditing ? 'Editar proposta' : 'Nova proposta'}
             </h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-text-secondary">
               Preencha os dados e organize o conteúdo na ordem do documento final.
             </p>
           </div>
@@ -434,7 +434,7 @@ export function ProposalEditorPage() {
             variant="outline"
             onClick={handleDownload}
             disabled={downloading}
-            className="border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+            className="border-border text-text-secondary hover:bg-surface-alt"
           >
             {downloading
               ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -444,25 +444,25 @@ export function ProposalEditorPage() {
         </div>
 
         {error && (
-          <div role="alert" className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          <div role="alert" className="rounded-lg border border-error/30 bg-error-background px-4 py-3 text-sm text-error">
             {error}
           </div>
         )}
         {settingsWarning && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" role="status">
+          <div className="rounded-lg border border-warning/30 bg-warning-background px-4 py-3 text-sm text-text-primary" role="status">
             {settingsWarning} O PDF usará os dados padrão atuais; revise-os em Configurações.
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          <section className="space-y-5 rounded-xl border border-zinc-800 bg-[#18181b] p-5 sm:p-6">
+          <section className="space-y-5 rounded-xl border border-border bg-surface p-5 sm:p-6">
             <div>
-              <h2 className="text-lg font-semibold text-white">Identificação e condições</h2>
-              <p className="mt-1 text-sm text-zinc-400">Esses dados aparecem no cabeçalho da proposta.</p>
+              <h2 className="text-lg font-semibold text-text-primary">Identificação e condições</h2>
+              <p className="mt-1 text-sm text-text-secondary">Esses dados aparecem no cabeçalho da proposta.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="proposal-title" className="text-zinc-300">Título da proposta *</Label>
+                <Label htmlFor="proposal-title" className="text-text-secondary">Título da proposta *</Label>
                 <Input
                   id="proposal-title"
                   value={form.title}
@@ -470,11 +470,11 @@ export function ProposalEditorPage() {
                   required
                   maxLength={200}
                   placeholder="Ex.: Desenvolvimento do projeto"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400 placeholder:text-zinc-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="proposal-client" className="text-zinc-300">Cliente *</Label>
+                <Label htmlFor="proposal-client" className="text-text-secondary">Cliente *</Label>
                 <Input
                   id="proposal-client"
                   value={form.client_name}
@@ -482,33 +482,33 @@ export function ProposalEditorPage() {
                   required
                   maxLength={200}
                   autoComplete="organization"
-                  className="border-zinc-700 bg-zinc-900 text-white"
+                  className="border-border bg-surface text-text-primary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="proposal-contact" className="text-zinc-300">Pessoa de contato</Label>
+                <Label htmlFor="proposal-contact" className="text-text-secondary">Pessoa de contato</Label>
                 <Input
                   id="proposal-contact"
                   value={form.contact_name}
                   onChange={(event) => updateField('contact_name', event.target.value)}
                   maxLength={200}
                   autoComplete="name"
-                  className="border-zinc-700 bg-zinc-900 text-white"
+                  className="border-border bg-surface text-text-primary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="proposal-issued" className="text-zinc-300">Data de emissão *</Label>
+                <Label htmlFor="proposal-issued" className="text-text-secondary">Data de emissão *</Label>
                 <Input
                   id="proposal-issued"
                   type="date"
                   value={form.issue_date}
                   onChange={(event) => updateField('issue_date', event.target.value)}
                   required
-                  className="border-zinc-700 bg-zinc-900 text-white"
+                  className="border-border bg-surface text-text-primary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="proposal-valid-until" className="text-zinc-300">Válida até *</Label>
+                <Label htmlFor="proposal-valid-until" className="text-text-secondary">Válida até *</Label>
                 <Input
                   id="proposal-valid-until"
                   type="date"
@@ -516,16 +516,16 @@ export function ProposalEditorPage() {
                   onChange={(event) => updateField('valid_until', event.target.value)}
                   min={form.issue_date}
                   required
-                  className="border-zinc-700 bg-zinc-900 text-white"
+                  className="border-border bg-surface text-text-primary"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="proposal-status" className="text-zinc-300">Status *</Label>
+                <Label htmlFor="proposal-status" className="text-text-secondary">Status *</Label>
                 <select
                   id="proposal-status"
                   value={form.status}
                   onChange={(event) => updateField('status', event.target.value)}
-                  className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm text-text-primary outline-none focus:ring-2 focus:ring-focus"
                 >
                   {PROPOSAL_STATUSES.map((status) => (
                     <option key={status.value} value={status.value}>{status.label}</option>
@@ -533,14 +533,14 @@ export function ProposalEditorPage() {
                 </select>
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="proposal-city" className="text-zinc-300">Cidade para o fechamento (opcional)</Label>
+                <Label htmlFor="proposal-city" className="text-text-secondary">Cidade para o fechamento (opcional)</Label>
                 <Input
                   id="proposal-city"
                   value={form.city}
                   onChange={(event) => updateField('city', event.target.value)}
                   maxLength={120}
                   placeholder="Cidade"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400 placeholder:text-zinc-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
                 />
               </div>
             </div>
@@ -549,8 +549,8 @@ export function ProposalEditorPage() {
           <section className="space-y-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-white">Conteúdo da proposta</h2>
-                <p className="mt-1 text-sm text-zinc-400">
+                <h2 className="text-lg font-semibold text-text-primary">Conteúdo da proposta</h2>
+                <p className="mt-1 text-sm text-text-secondary">
                   As seções seguem o modelo e podem ser reordenadas; a seção financeira é fixa.
                 </p>
               </div>
@@ -562,7 +562,7 @@ export function ProposalEditorPage() {
                   sections: [...current.sections, createSection()],
                 }))}
                 disabled={form.sections.length >= 31}
-                className="border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+                className="border-border text-text-secondary hover:bg-surface-alt"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar seção
@@ -570,9 +570,9 @@ export function ProposalEditorPage() {
             </div>
 
             {form.sections.map((section, index) => (
-              <section key={section.id} className="space-y-3 border-t border-zinc-800 pt-5">
+              <section key={section.id} className="space-y-3 border-t border-border pt-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <Label htmlFor={`proposal-section-title-${index}`} className="text-base font-semibold text-white">
+                  <Label htmlFor={`proposal-section-title-${index}`} className="text-base font-semibold text-text-primary">
                     {section.title || 'Nova seção'}
                   </Label>
                   <div className="flex items-center gap-1">
@@ -583,7 +583,7 @@ export function ProposalEditorPage() {
                       aria-label={`Mover seção ${index + 1} para cima`}
                       onClick={() => moveSection(index, -1)}
                       disabled={index === 0}
-                      className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                      className="h-8 w-8 text-text-secondary hover:bg-surface-alt hover:text-text-primary"
                     >
                       <ArrowUp className="h-4 w-4" />
                     </Button>
@@ -594,7 +594,7 @@ export function ProposalEditorPage() {
                       aria-label={`Mover seção ${index + 1} para baixo`}
                       onClick={() => moveSection(index, 1)}
                       disabled={index === form.sections.length - 1}
-                      className="h-8 w-8 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                      className="h-8 w-8 text-text-secondary hover:bg-surface-alt hover:text-text-primary"
                     >
                       <ArrowDown className="h-4 w-4" />
                     </Button>
@@ -605,7 +605,7 @@ export function ProposalEditorPage() {
                         size="icon"
                         aria-label={`Remover seção ${index + 1}`}
                         onClick={() => removeSection(index)}
-                        className="h-8 w-8 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300"
+                        className="h-8 w-8 text-text-secondary hover:bg-error-background hover:text-error"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -620,10 +620,10 @@ export function ProposalEditorPage() {
                   maxLength={160}
                   aria-label={`Título da seção ${index + 1}`}
                   placeholder="Título da seção"
-                  className="border-zinc-700 bg-zinc-900 text-white caret-emerald-400 placeholder:text-zinc-400"
+                  className="border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
                 />
                 {section.kind === 'financial' ? (
-                  <div className="space-y-5 rounded-xl border border-emerald-500/30 bg-[#18181b] p-5 sm:p-6">
+                  <div className="space-y-5 rounded-xl border border-success/30 bg-surface p-5 sm:p-6">
                     <div className="grid gap-4 sm:grid-cols-2 sm:items-end">
                       <Field id="proposal-amount" label="Investimento total (R$) *">
                         <Input
@@ -635,20 +635,20 @@ export function ProposalEditorPage() {
                           inputMode="decimal"
                           type="text"
                           autoComplete="off"
-                          className="border-zinc-700 bg-zinc-900 text-right tabular-nums text-white caret-emerald-400 placeholder:text-zinc-400"
+                          className="border-border bg-surface text-right tabular-nums text-text-primary caret-brand-primary placeholder:text-text-secondary"
                         />
                       </Field>
-                      <p className="pb-2 text-sm leading-6 text-zinc-400">
+                      <p className="pb-2 text-sm leading-6 text-text-secondary">
                         A agenda é opcional e, quando preenchida, deve somar o investimento.
                         Ela não cria recebíveis; isso acontece somente nos contratos assinados.
                       </p>
                     </div>
 
-                    <div className="space-y-4 border-t border-zinc-800 pt-4">
+                    <div className="space-y-4 border-t border-border pt-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <h3 className="text-base font-semibold text-white">Formas de pagamento</h3>
-                          <p className="mt-1 text-sm text-zinc-400">
+                          <h3 className="text-base font-semibold text-text-primary">Formas de pagamento</h3>
+                          <p className="mt-1 text-sm text-text-secondary">
                             Descreva cada parcela e informe seu vencimento previsto.
                           </p>
                         </div>
@@ -657,7 +657,7 @@ export function ProposalEditorPage() {
                           variant="outline"
                           onClick={addPayment}
                           disabled={form.payment_schedule.length >= 24}
-                          className="shrink-0 border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+                          className="shrink-0 border-border text-text-secondary hover:bg-surface-alt"
                         >
                           <Plus className="mr-2 h-4 w-4" />
                           Adicionar parcela
@@ -669,7 +669,7 @@ export function ProposalEditorPage() {
                           {form.payment_schedule.map((payment, paymentIndex) => (
                             <div
                               key={payment.id}
-                              className="grid gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-4 sm:grid-cols-[minmax(0,1.4fr)_minmax(10rem,1fr)_minmax(9rem,0.8fr)_auto] sm:items-end"
+                              className="grid gap-3 rounded-lg border border-border bg-surface p-4 sm:grid-cols-[minmax(0,1.4fr)_minmax(10rem,1fr)_minmax(9rem,0.8fr)_auto] sm:items-end"
                             >
                               <Field
                                 id={`proposal-payment-description-${paymentIndex}`}
@@ -682,7 +682,7 @@ export function ProposalEditorPage() {
                                   maxLength={200}
                                   required
                                   placeholder="Ex.: Entrada"
-                                  className="border-zinc-700 bg-zinc-950 text-white caret-emerald-400"
+                                  className="border-border bg-surface text-text-primary caret-brand-primary"
                                 />
                               </Field>
                               <Field
@@ -695,7 +695,7 @@ export function ProposalEditorPage() {
                                   value={payment.due_date}
                                   onChange={(event) => updatePayment(paymentIndex, 'due_date', event.target.value)}
                                   required
-                                  className="border-zinc-700 bg-zinc-950 text-white"
+                                  className="border-border bg-surface text-text-primary"
                                 />
                               </Field>
                               <Field
@@ -710,7 +710,7 @@ export function ProposalEditorPage() {
                                   required
                                   inputMode="decimal"
                                   autoComplete="off"
-                                  className="border-zinc-700 bg-zinc-950 text-right tabular-nums text-white caret-emerald-400 placeholder:text-zinc-400"
+                                  className="border-border bg-surface text-right tabular-nums text-text-primary caret-brand-primary placeholder:text-text-secondary"
                                 />
                               </Field>
                               <Button
@@ -719,7 +719,7 @@ export function ProposalEditorPage() {
                                 size="icon"
                                 aria-label={`Remover parcela ${paymentIndex + 1}`}
                                 onClick={() => removePayment(paymentIndex)}
-                                className="h-10 w-10 text-zinc-400 hover:bg-rose-500/10 hover:text-rose-300"
+                                className="h-10 w-10 text-text-secondary hover:bg-error-background hover:text-error"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -727,13 +727,13 @@ export function ProposalEditorPage() {
                           ))}
                         </div>
                       ) : (
-                        <div className="rounded-lg border border-dashed border-zinc-700 px-4 py-8 text-center">
-                          <p className="text-sm text-zinc-400">Nenhuma parcela adicionada.</p>
+                        <div className="rounded-lg border border-dashed border-border px-4 py-8 text-center">
+                          <p className="text-sm text-text-secondary">Nenhuma parcela adicionada.</p>
                           <Button
                             type="button"
                             variant="outline"
                             onClick={addPayment}
-                            className="mt-3 border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+                            className="mt-3 border-border text-text-secondary hover:bg-surface-alt"
                           >
                             <Plus className="mr-2 h-4 w-4" />
                             Adicionar primeira parcela
@@ -741,22 +741,22 @@ export function ProposalEditorPage() {
                         </div>
                       )}
 
-                      <div className="space-y-3 border-t border-zinc-800 pt-4" aria-live="polite">
+                      <div className="space-y-3 border-t border-border pt-4" aria-live="polite">
                         <div className="flex flex-wrap items-end justify-between gap-3">
-                          <p className="text-sm text-zinc-400">
+                          <p className="text-sm text-text-secondary">
                             {form.payment_schedule.length}{' '}
                             {form.payment_schedule.length === 1 ? 'parcela' : 'parcelas'}
                           </p>
                           <div className="grid grid-cols-2 gap-6 text-right">
                             <div>
-                              <span className="block text-xs text-zinc-400">Investimento</span>
-                              <span className="mt-1 block font-medium tabular-nums text-zinc-200">
+                              <span className="block text-xs text-text-secondary">Investimento</span>
+                              <span className="mt-1 block font-medium tabular-nums text-text-secondary">
                                 {Number.isSafeInteger(investmentCents) ? formatCurrency(investmentCents) : '—'}
                               </span>
                             </div>
                             <div>
-                              <span className="block text-xs text-zinc-400">Soma das parcelas</span>
-                              <span className="mt-1 block text-xl font-semibold tabular-nums text-white">
+                              <span className="block text-xs text-text-secondary">Soma das parcelas</span>
+                              <span className="mt-1 block text-xl font-semibold tabular-nums text-text-primary">
                                 {paymentAmountsValid && paymentTotalIsSafe
                                   ? formatCurrency(scheduledAmountCents)
                                   : '—'}
@@ -765,7 +765,7 @@ export function ProposalEditorPage() {
                           </div>
                         </div>
                         {form.payment_schedule.length > 0 && (
-                          <p className={`text-right text-sm ${paymentScheduleMatches ? 'text-emerald-300' : 'text-amber-300'}`} role="status">
+                          <p className={`text-right text-sm ${paymentScheduleMatches ? 'text-success' : 'text-text-primary'}`} role="status">
                             {paymentScheduleStatus}
                           </p>
                         )}
@@ -775,7 +775,7 @@ export function ProposalEditorPage() {
                     <Field
                       id={`proposal-financial-notes-${index}`}
                       label="Observações sobre investimento e pagamento"
-                      className="border-t border-zinc-800 pt-4"
+                      className="border-t border-border pt-4"
                     >
                       <Textarea
                         id={`proposal-financial-notes-${index}`}
@@ -784,7 +784,7 @@ export function ProposalEditorPage() {
                         placeholder="Condições adicionais não representadas pelas parcelas."
                         rows={3}
                         maxLength={20000}
-                        className="resize-y border-zinc-700 bg-zinc-900 text-white caret-emerald-400 placeholder:text-zinc-400"
+                        className="resize-y border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
                       />
                     </Field>
                   </div>
@@ -796,26 +796,26 @@ export function ProposalEditorPage() {
                     placeholder="Escreva o conteúdo desta seção. Para listas, inicie cada item com -."
                     rows={4}
                     maxLength={20000}
-                    className="resize-y border-zinc-700 bg-zinc-900 text-white caret-emerald-400 placeholder:text-zinc-400"
+                    className="resize-y border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
                   />
                 )}
               </section>
             ))}
           </section>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-zinc-800 pt-5 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => navigate('/proposals')}
-              className="border-zinc-700 text-zinc-200 hover:bg-zinc-800"
+              className="border-border text-text-secondary hover:bg-surface-alt"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={submitting}
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              className="bg-brand-primary text-text-inverse hover:bg-brand-hover"
             >
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {submitting ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Salvar proposta'}

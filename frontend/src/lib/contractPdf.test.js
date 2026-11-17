@@ -1,5 +1,13 @@
 import { createContractPdfDefinition } from './contractPdf';
 
+beforeAll(() => {
+  document.documentElement.style.setProperty('--brand-primary', '#5A0048');
+  document.documentElement.style.setProperty('--text-primary', '#29212A');
+  document.documentElement.style.setProperty('--text-secondary', '#665B66');
+  document.documentElement.style.setProperty('--border-color', '#E8DDE5');
+  document.documentElement.style.setProperty('--surface-alt', '#F3EBF0');
+});
+
 test('contract PDF preserves both parties, payment schedule, clauses, and logo', () => {
   const logoDataUrl = 'data:image/png;base64,cm9ic29u';
   const definition = createContractPdfDefinition({
@@ -54,6 +62,8 @@ test('contract PDF preserves both parties, payment schedule, clauses, and logo',
   expect(serialized).toContain('R$');
   expect(serialized).toContain('CLÁUSULA 1ª');
   expect(serialized).toContain('Ana Silva');
-  expect(serialized).toContain('#0052CC');
+  expect(serialized).toContain('#5A0048');
+  expect(serialized).toContain('#29212A');
+  expect(serialized).not.toContain('#0052CC');
   expect(definition.header.columns[0].image).toBe(logoDataUrl);
 });

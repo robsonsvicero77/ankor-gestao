@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Layout } from '../components/Layout';
 import { ledgerApi } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -28,26 +28,26 @@ const ENTRY_TYPE_CONFIG = {
   SALDO_INICIAL: {
     label: 'Saldo Inicial',
     icon: Wallet,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-500/10'
+    color: 'text-brand-secondary',
+    bgColor: 'bg-brand-light'
   },
   RECEITA_PAGA: {
     label: 'Receita Recebida',
     icon: ArrowDownCircle,
-    color: 'text-emerald-500',
-    bgColor: 'bg-emerald-500/10'
+    color: 'text-success',
+    bgColor: 'bg-success-background'
   },
   DESPESA_PAGA: {
     label: 'Despesa Paga',
     icon: ArrowUpCircle,
-    color: 'text-rose-500',
-    bgColor: 'bg-rose-500/10'
+    color: 'text-error',
+    bgColor: 'bg-error-background'
   },
   AJUSTE: {
     label: 'Ajuste',
     icon: RefreshCw,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10'
+    color: 'text-brand-secondary',
+    bgColor: 'bg-info-background'
   }
 };
 
@@ -64,7 +64,7 @@ export function LedgerPage() {
     end_date: ''
   });
 
-  const fetchEntries = async () => {
+  const fetchEntries = useCallback(async () => {
     setLoading(true);
     try {
       // Build filter params (remove empty values and 'all')
@@ -78,11 +78,11 @@ export function LedgerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     fetchEntries();
-  }, []);
+  }, [fetchEntries]);
 
   const applyFilters = () => {
     fetchEntries();
@@ -129,8 +129,8 @@ export function LedgerPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-white">Histórico (Ledger)</h1>
-            <p className="text-zinc-400 text-sm mt-1">
+            <h1 className="text-2xl lg:text-3xl font-bold text-text-primary">Histórico (Ledger)</h1>
+            <p className="text-text-secondary text-sm mt-1">
               Registro completo de todas as movimentações financeiras
             </p>
           </div>
@@ -138,15 +138,15 @@ export function LedgerPage() {
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
             className={cn(
-              "border-zinc-800",
-              hasActiveFilters ? "border-emerald-500/50 text-emerald-500" : "text-zinc-400"
+              "border-border",
+              hasActiveFilters ? "border-success/50 text-success" : "text-text-secondary"
             )}
             data-testid="toggle-filters-btn"
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtros
             {hasActiveFilters && (
-              <span className="ml-2 px-1.5 py-0.5 text-xs bg-emerald-500/20 rounded">
+              <span className="ml-2 px-1.5 py-0.5 text-xs bg-success-background rounded">
                 Ativos
               </span>
             )}
@@ -155,19 +155,19 @@ export function LedgerPage() {
 
         {/* Filters Panel */}
         {showFilters && (
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-zinc-300 text-sm">Tipo</Label>
+                  <Label className="text-text-secondary text-sm">Tipo</Label>
                   <Select 
                     value={filters.entry_type} 
                     onValueChange={(v) => setFilters({...filters, entry_type: v})}
                   >
-                    <SelectTrigger className="bg-zinc-900/50 border-zinc-800 text-white" data-testid="filter-type-select">
+                    <SelectTrigger className="bg-surface border-border text-text-primary" data-testid="filter-type-select">
                       <SelectValue placeholder="Todos os tipos" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectContent className="bg-surface border-border">
                       <SelectItem value="all">Todos</SelectItem>
                       <SelectItem value="SALDO_INICIAL">Saldo Inicial</SelectItem>
                       <SelectItem value="RECEITA_PAGA">Receita Recebida</SelectItem>
@@ -178,15 +178,15 @@ export function LedgerPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-zinc-300 text-sm">Direção</Label>
+                  <Label className="text-text-secondary text-sm">Direção</Label>
                   <Select 
                     value={filters.direction} 
                     onValueChange={(v) => setFilters({...filters, direction: v})}
                   >
-                    <SelectTrigger className="bg-zinc-900/50 border-zinc-800 text-white" data-testid="filter-direction-select">
+                    <SelectTrigger className="bg-surface border-border text-text-primary" data-testid="filter-direction-select">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-800">
+                    <SelectContent className="bg-surface border-border">
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="CREDIT">Entradas (Crédito)</SelectItem>
                       <SelectItem value="DEBIT">Saídas (Débito)</SelectItem>
@@ -195,35 +195,35 @@ export function LedgerPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-zinc-300 text-sm">Data Início</Label>
+                  <Label className="text-text-secondary text-sm">Data Início</Label>
                   <Input
                     type="date"
                     value={filters.start_date}
                     onChange={(e) => setFilters({...filters, start_date: e.target.value})}
                     data-testid="filter-start-date"
-                    className="bg-zinc-900/50 border-zinc-800 text-white"
+                    className="bg-surface border-border text-text-primary"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label className="text-zinc-300 text-sm">Data Fim</Label>
+                  <Label className="text-text-secondary text-sm">Data Fim</Label>
                   <Input
                     type="date"
                     value={filters.end_date}
                     onChange={(e) => setFilters({...filters, end_date: e.target.value})}
                     data-testid="filter-end-date"
-                    className="bg-zinc-900/50 border-zinc-800 text-white"
+                    className="bg-surface border-border text-text-primary"
                   />
                 </div>
               </div>
               
-              <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-zinc-800">
+              <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
                 {hasActiveFilters && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={clearFilters}
-                    className="text-zinc-400 hover:text-white"
+                    className="text-text-secondary hover:text-text-primary"
                     data-testid="clear-filters-btn"
                   >
                     <X className="h-4 w-4 mr-1" />
@@ -233,7 +233,7 @@ export function LedgerPage() {
                 <Button
                   size="sm"
                   onClick={applyFilters}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-brand-primary hover:bg-brand-hover text-text-inverse"
                   data-testid="apply-filters-btn"
                 >
                   Aplicar Filtros
@@ -245,33 +245,33 @@ export function LedgerPage() {
 
         {/* Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Total Entradas</span>
-                <span className="text-lg font-bold font-mono text-emerald-500">
+                <span className="text-sm text-text-secondary">Total Entradas</span>
+                <span className="text-lg font-bold font-mono text-success">
                   {formatCurrency(totalCredits)}
                 </span>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Total Saídas</span>
-                <span className="text-lg font-bold font-mono text-rose-500">
+                <span className="text-sm text-text-secondary">Total Saídas</span>
+                <span className="text-lg font-bold font-mono text-error">
                   {formatCurrency(totalDebits)}
                 </span>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[#18181b] border-zinc-800">
+          <Card className="bg-surface border-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Saldo Atual</span>
+                <span className="text-sm text-text-secondary">Saldo Atual</span>
                 <span className={cn(
                   'text-lg font-bold font-mono',
-                  currentBalance >= 0 ? 'text-emerald-500' : 'text-red-500'
+                  currentBalance >= 0 ? 'text-success' : 'text-error'
                 )}>
                   {formatCurrency(currentBalance)}
                 </span>
@@ -281,13 +281,13 @@ export function LedgerPage() {
         </div>
 
         {/* Ledger List */}
-        <Card className="bg-[#18181b] border-zinc-800">
+        <Card className="bg-surface border-border">
           <CardHeader>
-            <CardTitle className="text-lg text-white flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-zinc-400" />
+            <CardTitle className="text-lg text-text-primary flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-text-secondary" />
               Movimentações
               {entries.length > 0 && (
-                <span className="text-sm font-normal text-zinc-500">
+                <span className="text-sm font-normal text-text-secondary">
                   ({entries.length} registros)
                 </span>
               )}
@@ -296,12 +296,12 @@ export function LedgerPage() {
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+                <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
               </div>
             ) : entries.length === 0 ? (
               <div className="text-center py-12">
-                <BookOpen className="h-12 w-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400">
+                <BookOpen className="h-12 w-12 text-text-secondary mx-auto mb-3" />
+                <p className="text-text-secondary">
                   {hasActiveFilters 
                     ? 'Nenhuma movimentação encontrada com os filtros aplicados'
                     : 'Nenhuma movimentação registrada'}
@@ -311,27 +311,27 @@ export function LedgerPage() {
                     variant="ghost"
                     size="sm"
                     onClick={clearFilters}
-                    className="mt-2 text-emerald-500"
+                    className="mt-2 text-success"
                   >
                     Limpar filtros
                   </Button>
                 )}
               </div>
             ) : (
-              <div className="divide-y divide-zinc-800">
+              <div className="divide-y divide-border">
                 {entriesWithBalance.map((entry) => {
                   const config = ENTRY_TYPE_CONFIG[entry.entry_type] || {
                     label: entry.entry_type,
                     icon: BookOpen,
-                    color: 'text-zinc-400',
-                    bgColor: 'bg-zinc-500/10'
+                    color: 'text-text-secondary',
+                    bgColor: 'bg-surface-alt'
                   };
                   const Icon = config.icon;
 
                   return (
                     <div
                       key={entry.id}
-                      className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors"
+                      className="flex items-center justify-between p-4 hover:bg-surface-alt/30 transition-colors"
                       data-testid={`ledger-entry-${entry.id}`}
                     >
                       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -339,8 +339,8 @@ export function LedgerPage() {
                           <Icon className={cn('h-5 w-5', config.color)} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-white">{config.label}</p>
-                          <p className="text-sm text-zinc-500 truncate">
+                          <p className="font-medium text-text-primary">{config.label}</p>
+                          <p className="text-sm text-text-secondary truncate">
                             {entry.note || '-'} • {formatDate(entry.occurred_at)}
                           </p>
                         </div>
@@ -348,11 +348,11 @@ export function LedgerPage() {
                       <div className="text-right">
                         <p className={cn(
                           'font-mono font-medium tabular-nums',
-                          entry.direction === 'CREDIT' ? 'text-emerald-500' : 'text-rose-500'
+                          entry.direction === 'CREDIT' ? 'text-success' : 'text-error'
                         )}>
                           {entry.direction === 'CREDIT' ? '+' : '-'}{formatCurrency(entry.amount_cents)}
                         </p>
-                        <p className="text-xs text-zinc-500 font-mono tabular-nums">
+                        <p className="text-xs text-text-secondary font-mono tabular-nums">
                           Saldo: {formatCurrency(entry.runningBalance)}
                         </p>
                       </div>

@@ -1,0 +1,47 @@
+# Design System
+
+## Visual world
+Elegant Burgundy: a contemporary, sophisticated identity built around the institutional burgundy, with calm light surfaces, restrained rose accents, and clear semantic feedback. The application is an operational workspace; scanability, legibility, and consistency take priority over decoration.
+
+## Color tokens
+The canonical values live in `frontend/src/index.css` as CSS variables and are exposed through `frontend/tailwind.config.js`.
+
+| Role | Token | Value |
+|---|---|---|
+| Brand primary | `brand-primary` | `#5A0048` |
+| Primary hover | `brand-hover` | `#87316F` |
+| Primary active | `brand-active` | `#35102F` |
+| Brand light | `brand-light` | `#F1E3ED` |
+| Brand secondary | `brand-secondary` | `#754D6C` |
+| Brand accent | `brand-accent` | `#D49BBE` |
+| Background | `surface-background` | `#F8F3F5` |
+| Surface | `surface` | `#FFFFFF` |
+| Alternate surface | `surface-alt` | `#F3EBF0` |
+| Accent surface | `surface-accent` | `#F1E3ED` |
+| Primary text | `text-primary` | `#29212A` |
+| Secondary text | `text-secondary` | `#665B66` |
+| Muted text | `text-muted` | `#948794` |
+| Inverse text | `text-inverse` | `#FFFFFF` |
+| Border | `border` | `#E8DDE5` |
+| Strong border | `border-strong` | `#D9CBD5` |
+| Success | `success` / `success-background` | `#287A50` / `#EAF4EE` |
+| Warning | `warning` / `warning-background` | `#8A4B08` / `#FBF2E4` |
+| Error | `error` / `error-background` | `#C03950` / `#FBECEF` |
+| Info | `info` / `info-background` | `#3976B9` / `#EAF1F9` |
+| Focus | `focus` | `#87316F` |
+| Overlay | `overlay` | `rgba(41, 33, 42, 0.45)` |
+
+## Usage
+- Use the semantic Tailwind utilities (`bg-brand-primary`, `text-secondary`, `border-border`, `bg-error-background`) instead of hardcoded component colors.
+- Keep primary actions burgundy with white text, exact hover/active states, and a visible focus ring.
+- Keep cards and form fields white; use the alternate surface for subtle grouping rather than large tinted areas.
+- Use `brand-accent` sparingly for decorative details. Prefer text on light surfaces and white text on primary.
+- Warning and info hues have limited small-text contrast on their backgrounds. Use primary/secondary text for their labels and reserve those hues for icons, borders, and supporting cues.
+- `text-muted` is reserved for nonessential or sufficiently large text; use `text-secondary` for small supporting copy.
+- Preserve explicit labels/icons alongside feedback colors; never communicate status by color alone.
+
+## Typography and interaction
+Use Chivo for headings, the system sans-serif stack for interface text, and JetBrains Mono for monetary/tabular values. Inputs use white surfaces and the focus token. Buttons, menus, dialogs, tables, loading indicators, chart series, and PDF exports share the same semantic tokens.
+
+## Theme
+The product uses the light theme. Tailwind's existing class-based dark-mode compatibility is retained, but no separate dark palette or theme switch is defined.
