@@ -68,21 +68,21 @@ class AnkorGestãoAPITester:
     def test_auth_login(self):
         """Sign in an existing Supabase test account"""
         supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
-        anon_key = os.environ.get("SUPABASE_ANON_KEY", "")
+        publishable_key = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "")
         email = os.environ.get("SUPABASE_TEST_EMAIL", "")
         password = os.environ.get("SUPABASE_TEST_PASSWORD", "")
-        if not all([supabase_url, anon_key, email, password]):
+        if not all([supabase_url, publishable_key, email, password]):
             self.log_test(
                 "Supabase Test Login",
                 False,
-                "Configure SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_TEST_EMAIL and SUPABASE_TEST_PASSWORD",
+                "Configure SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_TEST_EMAIL and SUPABASE_TEST_PASSWORD",
             )
             return False
 
         try:
             response = requests.post(
                 f"{supabase_url}/auth/v1/token?grant_type=password",
-                headers={"apikey": anon_key},
+                headers={"apikey": publishable_key},
                 json={"email": email, "password": password},
                 timeout=15,
             )

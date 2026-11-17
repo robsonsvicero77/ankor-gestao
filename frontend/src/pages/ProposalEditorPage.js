@@ -8,6 +8,10 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { proposalsApi, settingsApi } from '../lib/api';
 import { downloadProposalPdf } from '../lib/proposalPdf';
+import {
+  getFixedProposalSection,
+  normalizeProposalSections,
+} from '../lib/proposalContent';
 import { PROPOSAL_STATUSES } from './ProposalsPage';
 import {
   amountToCents,
@@ -49,9 +53,10 @@ function createPayment({ description = '', due_date = '', amount = '' } = {}) {
 }
 
 function createDefaultSections() {
-  return DEFAULT_SECTION_DEFINITIONS.map(({ title, kind = 'text' }) => (
-    createSection(title, '', kind)
-  ));
+  return normalizeProposalSections(DEFAULT_SECTION_DEFINITIONS.map(({ title, kind = 'text' }) => {
+    const fixedSection = getFixedProposalSection(title);
+    return createSection(title, fixedSection?.body || '', kind);
+  }));
 }
 
 function normalizeSectionTitle(title) {
@@ -99,7 +104,7 @@ function loadProposalSections(sections) {
     0,
     createSection(financialTitle, financialBodies.join('\n\n'), 'financial'),
   );
-  return loadedSections;
+  return normalizeProposalSections(loadedSections);
 }
 
 function dateInputValue(date) {
@@ -244,7 +249,9 @@ export function ProposalEditorPage() {
     setForm((current) => ({
       ...current,
       sections: current.sections.map((section, sectionIndex) => (
-        sectionIndex === index ? { ...section, [field]: value } : section
+        sectionIndex === index && !getFixedProposalSection(section)
+          ? { ...section, [field]: value }
+          : section
       )),
     }));
   };
@@ -281,6 +288,10 @@ export function ProposalEditorPage() {
     setForm((current) => {
       const destination = index + offset;
       if (destination < 0 || destination >= current.sections.length) return current;
+      if (
+        getFixedProposalSection(current.sections[index])
+        || getFixedProposalSection(current.sections[destination])
+      ) return current;
       const sections = [...current.sections];
       [sections[index], sections[destination]] = [sections[destination], sections[index]];
       return { ...current, sections };
@@ -290,7 +301,9 @@ export function ProposalEditorPage() {
   const removeSection = (index) => {
     setForm((current) => ({
       ...current,
-      sections: current.sections.filter((_, sectionIndex) => sectionIndex !== index),
+      sections: current.sections.filter((section, sectionIndex) => (
+        sectionIndex !== index || Boolean(getFixedProposalSection(section))
+      )),
     }));
   };
 
@@ -354,7 +367,7 @@ export function ProposalEditorPage() {
         city: form.city.trim() || null,
         provider,
         payment_schedule: payments,
-        sections: form.sections.map((section) => ({
+        sections: normalizeProposalSections(form.sections).map((section) => ({
           title: section.title.trim(),
           body: section.body,
           kind: section.kind,
@@ -570,7 +583,13 @@ export function ProposalEditorPage() {
             </div>
 
             {form.sections.map((section, index) => (
-              <section key={section.id} className="space-y-3 border-t border-border pt-5">
+              <section
+                key={section.id}
+                className="space-y-3 border-t border-border pt-5"
+              >
+                {getFixedProposalSection(section) && (
+                  <p className="text-xs font-medium text-text-secondary">Seção fixa do modelo</p>
+                )}
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Label htmlFor={`proposal-section-title-${index}`} className="text-base font-semibold text-text-primary">
                     {section.title || 'Nova seção'}
@@ -582,7 +601,9 @@ export function ProposalEditorPage() {
                       size="icon"
                       aria-label={`Mover seção ${index + 1} para cima`}
                       onClick={() => moveSection(index, -1)}
-                      disabled={index === 0}
+                      disabled={index === 0
+                        || Boolean(getFixedProposalSection(section))
+                        || Boolean(getFixedProposalSection(form.sections[index - 1]))}
                       className="h-8 w-8 text-text-secondary hover:bg-surface-alt hover:text-text-primary"
                     >
                       <ArrowUp className="h-4 w-4" />
@@ -593,12 +614,14 @@ export function ProposalEditorPage() {
                       size="icon"
                       aria-label={`Mover seção ${index + 1} para baixo`}
                       onClick={() => moveSection(index, 1)}
-                      disabled={index === form.sections.length - 1}
+                      disabled={index === form.sections.length - 1
+                        || Boolean(getFixedProposalSection(section))
+                        || Boolean(getFixedProposalSection(form.sections[index + 1]))}
                       className="h-8 w-8 text-text-secondary hover:bg-surface-alt hover:text-text-primary"
                     >
                       <ArrowDown className="h-4 w-4" />
                     </Button>
-                    {section.kind !== 'financial' && (
+                    {section.kind !== 'financial' && !getFixedProposalSection(section) && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -618,6 +641,7 @@ export function ProposalEditorPage() {
                   onChange={(event) => updateSection(index, 'title', event.target.value)}
                   required
                   maxLength={160}
+                  readOnly={Boolean(getFixedProposalSection(section))}
                   aria-label={`Título da seção ${index + 1}`}
                   placeholder="Título da seção"
                   className="border-border bg-surface text-text-primary caret-brand-primary placeholder:text-text-secondary"
@@ -788,6 +812,14 @@ export function ProposalEditorPage() {
                       />
                     </Field>
                   </div>
+                ) : getFixedProposalSection(section) ? (
+                  <Textarea
+                    value={section.body}
+                    readOnly
+                    aria-label={`Conteúdo fixo da seção: ${section.title}`}
+                    rows={Math.min(10, Math.max(4, section.body.split('\n').length))}
+                    className="resize-y border-border bg-surface-alt text-text-primary"
+                  />
                 ) : (
                   <Textarea
                     value={section.body}

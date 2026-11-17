@@ -23,7 +23,7 @@ def test_current_user_validates_supabase_token_and_loads_profile(monkeypatch):
 
     def auth_response(request):
         assert request.url.path == "/auth/v1/user"
-        assert request.headers["apikey"] == "test-anon-key"
+        assert request.headers["apikey"] == "test-publishable-key"
         assert request.headers["authorization"] == "Bearer valid-token"
         return httpx.Response(200, json={"id": user_id})
 
@@ -36,7 +36,7 @@ def test_current_user_validates_supabase_token_and_loads_profile(monkeypatch):
         client = httpx.AsyncClient(transport=httpx.MockTransport(auth_response))
         monkeypatch.setattr(server, "auth_http_client", client)
         monkeypatch.setattr(server, "SUPABASE_URL", "https://example.supabase.co")
-        monkeypatch.setattr(server, "SUPABASE_ANON_KEY", "test-anon-key")
+        monkeypatch.setattr(server, "SUPABASE_PUBLISHABLE_KEY", "test-publishable-key")
         monkeypatch.setattr(server.database, "fetch_one", fetch_one)
         try:
             result = await server.get_current_user(
@@ -61,7 +61,7 @@ def test_current_user_rejects_expired_supabase_token(monkeypatch):
         client = httpx.AsyncClient(transport=httpx.MockTransport(auth_response))
         monkeypatch.setattr(server, "auth_http_client", client)
         monkeypatch.setattr(server, "SUPABASE_URL", "https://example.supabase.co")
-        monkeypatch.setattr(server, "SUPABASE_ANON_KEY", "test-anon-key")
+        monkeypatch.setattr(server, "SUPABASE_PUBLISHABLE_KEY", "test-publishable-key")
         try:
             with pytest.raises(HTTPException) as error:
                 await server.get_current_user(

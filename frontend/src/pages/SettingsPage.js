@@ -10,16 +10,27 @@ import {
   LockKeyhole,
   Mail,
   Save,
+  Trash2,
   UserRound,
+  UsersRound,
   Wallet,
 } from 'lucide-react';
 import { Layout } from '../components/Layout';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { useAuth } from '../context/AuthContext';
-import { settingsApi } from '../lib/api';
+import { adminAccountsApi, settingsApi } from '../lib/api';
 import { getProviderDefaults } from '../lib/contractUtils';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/utils';
@@ -30,6 +41,7 @@ const SECTIONS = [
   { id: 'financial', label: 'Preferências financeiras', icon: Wallet },
   { id: 'alerts', label: 'Alertas', icon: BellRing },
   { id: 'security', label: 'Segurança', icon: LockKeyhole },
+  { id: 'accounts', label: 'Contas cadastradas', icon: UsersRound, adminOnly: true },
 ];
 
 const DEFAULT_ALERTS = {
@@ -77,6 +89,16 @@ function amountInputToCents(value) {
     : digits;
   const amount = Number(decimal);
   return Number.isFinite(amount) ? Math.round(amount * 100) * (negative ? -1 : 1) : NaN;
+}
+
+function formatRegistrationDate(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
 }
 
 function Field({ id, label, children, hint }) {
@@ -130,6 +152,11 @@ export function SettingsPage() {
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [message, setMessage] = useState(null);
   const [loadError, setLoadError] = useState('');
+  const [accounts, setAccounts] = useState([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
+  const [accountsError, setAccountsError] = useState('');
+  const [accountToDelete, setAccountToDelete] = useState(null);
+  const [deletingAccountId, setDeletingAccountId] = useState('');
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
@@ -171,6 +198,25 @@ export function SettingsPage() {
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
+
+  const loadAccounts = useCallback(async () => {
+    setAccountsLoading(true);
+    setAccountsError('');
+    try {
+      const { data } = await adminAccountsApi.list();
+      setAccounts(data.accounts);
+    } catch (error) {
+      setAccountsError(getErrorMessage(error, 'Não foi possível carregar as contas cadastradas.'));
+    } finally {
+      setAccountsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeSectionId === 'accounts' && user?.role === 'admin') {
+      loadAccounts();
+    }
+  }, [activeSectionId, loadAccounts, user?.role]);
 
   const dirty = useMemo(
     () => Boolean(form && savedForm && JSON.stringify(form) !== JSON.stringify(savedForm)),
@@ -369,7 +415,31 @@ export function SettingsPage() {
     }
   };
 
-  const activeSection = SECTIONS.find((section) => section.id === activeSectionId) || SECTIONS[0];
+  const deleteAccount = async () => {
+    if (!accountToDelete) return;
+    setDeletingAccountId(accountToDelete.id);
+    setAccountsError('');
+    setMessage(null);
+    try {
+      await adminAccountsApi.delete(accountToDelete.id);
+      setAccounts((current) => current.filter((account) => account.id !== accountToDelete.id));
+      setAccountToDelete(null);
+      setMessage({
+        type: 'success',
+        text: `A conta de ${accountToDelete.name} e os dados associados foram excluídos permanentemente.`,
+      });
+    } catch (error) {
+      setAccountsError(getErrorMessage(error, 'Não foi possível excluir esta conta.'));
+    } finally {
+      setDeletingAccountId('');
+    }
+  };
+
+  const visibleSections = SECTIONS.filter(
+    (section) => !section.adminOnly || user?.role === 'admin',
+  );
+  const activeSection = visibleSections.find((section) => section.id === activeSectionId)
+    || visibleSections[0];
   const ActiveSectionIcon = activeSection.icon;
 
   if (loading) {
@@ -483,7 +553,7 @@ export function SettingsPage() {
             aria-label="Seções de configurações"
             className="order-2 -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0"
           >
-            {SECTIONS.map((section) => {
+            {visibleSections.map((section) => {
               const Icon = section.icon;
               const selected = section.id === activeSectionId;
               return (
@@ -517,6 +587,7 @@ export function SettingsPage() {
                     {activeSection.id === 'financial' && 'Defina o fuso dos vencimentos. Os valores permanecem em reais.'}
                     {activeSection.id === 'alerts' && 'Escolha quais avisos o sistema deve enviar e exibir.'}
                     {activeSection.id === 'security' && 'Altere seu e-mail de acesso ou crie uma nova senha.'}
+                    {activeSection.id === 'accounts' && 'Consulte as contas cadastradas e remova contas de usuário quando necessário.'}
                   </p>
                 </div>
               </div>
@@ -795,9 +866,141 @@ export function SettingsPage() {
                 </form>
               </div>
             )}
+
+            {activeSection.id === 'accounts' && (
+              <div className="space-y-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="type-h3 text-text-primary">Contas do sistema</h3>
+                    <p className="mt-1 text-sm text-text-secondary">
+                      {accounts.length} {accounts.length === 1 ? 'conta cadastrada' : 'contas cadastradas'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={loadAccounts}
+                    disabled={accountsLoading}
+                    className="border-border-strong text-text-secondary hover:bg-surface-alt"
+                  >
+                    {accountsLoading
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <UsersRound className="h-4 w-4" />}
+                    Atualizar lista
+                  </Button>
+                </div>
+
+                <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning-background p-4 text-sm text-text-primary">
+                  <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-text-secondary" />
+                  <p className="leading-relaxed">
+                    Excluir uma conta também apaga permanentemente a empresa e todos os dados associados. Contas de administrador são protegidas.
+                  </p>
+                </div>
+
+                {accountsError && (
+                  <div role="alert" className="rounded-lg border border-error/30 bg-error-background px-4 py-3 text-sm text-error">
+                    {accountsError}
+                  </div>
+                )}
+
+                {accountsLoading ? (
+                  <div className="flex min-h-32 items-center justify-center text-sm text-text-secondary" role="status">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin text-brand-primary" />
+                    Carregando contas...
+                  </div>
+                ) : accountsError && accounts.length === 0 ? null : accounts.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-text-secondary">
+                    Nenhuma conta cadastrada.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-lg border border-border">
+                    <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                      <thead className="bg-surface-alt text-xs uppercase tracking-wide text-text-secondary">
+                        <tr>
+                          <th scope="col" className="px-4 py-3 font-medium">Nome</th>
+                          <th scope="col" className="px-4 py-3 font-medium">E-mail</th>
+                          <th scope="col" className="px-4 py-3 font-medium">Data de cadastro</th>
+                          <th scope="col" className="px-4 py-3 text-right font-medium">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {accounts.map((account) => (
+                          <tr key={account.id} className="bg-surface">
+                            <td className="px-4 py-3 font-medium text-text-primary">{account.name || '—'}</td>
+                            <td className="px-4 py-3 text-text-secondary">{account.email || '—'}</td>
+                            <td className="whitespace-nowrap px-4 py-3 tabular-nums text-text-secondary">
+                              {formatRegistrationDate(account.created_at)}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {account.role === 'admin' ? (
+                                <span className="text-xs text-text-secondary">Administrador protegido</span>
+                              ) : (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  aria-label={`Excluir conta de ${account.name || account.email}`}
+                                  onClick={() => {
+                                    setAccountsError('');
+                                    setAccountToDelete(account);
+                                  }}
+                                  className="border-error/30 text-error hover:bg-error-background"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Excluir
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         </div>
       </div>
+      <AlertDialog
+        open={Boolean(accountToDelete)}
+        onOpenChange={(open) => {
+          if (!open && !deletingAccountId) setAccountToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir conta permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {accountToDelete && (
+                <>
+                  A conta de <strong>{accountToDelete.name}</strong> ({accountToDelete.email}) será removida.
+                  Esta ação também apagará a empresa e todos os dados associados, e não poderá ser desfeita.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {accountsError && (
+            <p role="alert" className="text-sm text-error">{accountsError}</p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={Boolean(deletingAccountId)}>
+              Cancelar
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              onClick={deleteAccount}
+              disabled={Boolean(deletingAccountId)}
+              className="bg-error text-white hover:bg-error/90"
+            >
+              {deletingAccountId
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Trash2 className="h-4 w-4" />}
+              {deletingAccountId ? 'Excluindo...' : 'Excluir conta e dados'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 }

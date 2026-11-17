@@ -86,3 +86,42 @@ test('proposal PDF groups investment notes and scheduled payments', () => {
   expect(serialized).toContain('Pagamento por transferência.');
   expect(serialized.match(/Investimento e formas de pagamento/g)).toHaveLength(1);
 });
+
+test('proposal PDF always includes fixed clauses and optional maintenance plans after acceptance', () => {
+  const definition = createProposalPdfDefinition({
+    title: 'Projeto web',
+    client_name: 'Cliente Exemplo',
+    issue_date: '2026-03-01',
+    valid_until: '2026-03-31',
+    amount_cents: 100000,
+    content: {
+      sections: [
+        { title: 'Itens não incluídos', body: 'Texto antigo editável.' },
+        { title: 'Aceite', body: '' },
+      ],
+    },
+  }, 'data:image/png;base64,cm9ic29u');
+  const serialized = JSON.stringify(definition);
+
+  expect(serialized).toContain('Fornecer os acessos necessários ao código, banco de dados, loja e hospedagem;');
+  expect(serialized).toContain('Novas funcionalidades ou alterações de escopo poderão ser orçadas separadamente.');
+  expect(serialized).toContain('A aprovação não substitui a validação jurídica dos textos legais');
+  expect(serialized).toContain('Sua aprovação confirma a concordância com o escopo');
+  expect(serialized).not.toContain('Texto antigo editável.');
+  expect(serialized).toContain('Opcional: Planos de Manutenção e Suporte Contínuo (Sem Compromisso)');
+  expect(serialized).toContain('ESSENCIAL');
+  expect(serialized).toContain('PROFISSIONAL');
+  expect(serialized).toContain('AVANÇADO');
+  expect(serialized).toContain('Até 1 pequena alteração por mês');
+  expect(serialized).toContain('Resposta em até 3 dias úteis');
+  expect(serialized).toContain('Até 3 pequenas alterações por mês');
+  expect(serialized).toContain('Resposta em até 2 dias úteis');
+  expect(serialized).toContain('SEO técnico básico e relatório');
+  expect(serialized).toContain('1.242,60');
+  expect(serialized).toContain('109,00 / mês');
+  expect(serialized).toContain('2.701,80');
+  expect(serialized).toContain('237,00 / mês');
+  expect(serialized).toContain('4.332,00');
+  expect(serialized).toContain('380,00 / mês');
+  expect(serialized.indexOf('Aceite')).toBeLessThan(serialized.indexOf('Opcional: Planos de Manutenção'));
+});

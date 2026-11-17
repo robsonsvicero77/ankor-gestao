@@ -275,6 +275,13 @@ class PostgresDatabase:
         )
         return [_serialize_record(record) for record in records]
 
+    async def fetch_admin_user_profiles(self) -> list[dict]:
+        records = await self._require_pool().fetch(
+            'SELECT id, name, email, created_at, role '
+            'FROM "users" ORDER BY "created_at" DESC'
+        )
+        return [_serialize_record(record) for record in records]
+
     async def insert(self, table: str, values: Mapping[str, Any]) -> dict:
         _validate_table(table)
         columns = list(values)

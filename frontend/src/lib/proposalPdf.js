@@ -1,4 +1,8 @@
 import { getDesignColors } from './designColors';
+import {
+  MAINTENANCE_PLANS,
+  normalizeProposalSections,
+} from './proposalContent';
 
 async function loadProposalLogo() {
   const logoUrl = `${process.env.PUBLIC_URL || ''}/logo_robsonsvicero.png`;
@@ -154,9 +158,82 @@ function financialSectionContent(proposal, sections, colors) {
   return nodes;
 }
 
+function maintenancePlanContent(colors) {
+  return [
+    {
+      text: 'Opcional: Planos de Manutenção e Suporte Contínuo (Sem Compromisso)',
+      style: 'sectionHeading',
+      keepWithNext: true,
+    },
+    {
+      text: 'A configuração inicial e o domínio já estão totalmente inclusos no valor do projeto acima.',
+      italics: true,
+      color: colors.textSecondary,
+      fontSize: 9,
+      margin: [0, 0, 0, 4],
+    },
+    {
+      text: 'Caso deseje contar com suporte técnico contínuo, ajustes recorrentes e atualizações de segurança após a entrega, apresentamos abaixo nossos planos opcionais, sem qualquer obrigação de contratação imediata:',
+      italics: true,
+      color: colors.textSecondary,
+      fontSize: 9,
+      lineHeight: 1.3,
+      margin: [0, 0, 0, 12],
+    },
+    {
+      table: {
+        headerRows: 1,
+        keepWithHeaderRows: 1,
+        dontBreakRows: true,
+        widths: [90, '*', '*', '*'],
+        body: [
+          [
+            { text: 'PLANO', style: 'paymentTableHeader' },
+            ...MAINTENANCE_PLANS.map((plan) => ({
+              text: plan.name.toLocaleUpperCase('pt-BR'),
+              style: 'paymentTableHeader',
+            })),
+          ],
+          [
+            { text: 'Entregáveis', bold: true, color: colors.textPrimary },
+            ...MAINTENANCE_PLANS.map((plan) => ({
+              ul: plan.deliverables,
+              color: colors.textPrimary,
+            })),
+          ],
+          [
+            { text: 'Total à vista (5% de desconto)', bold: true, color: colors.textPrimary },
+            ...MAINTENANCE_PLANS.map((plan) => ({
+              text: formatCurrency(plan.cashPriceCents),
+              color: colors.textPrimary,
+            })),
+          ],
+          [
+            { text: 'Total a prazo (12x)', bold: true, color: colors.textPrimary },
+            ...MAINTENANCE_PLANS.map((plan) => ({
+              text: `${formatCurrency(plan.monthlyPriceCents)} / mês`,
+              color: colors.textPrimary,
+            })),
+          ],
+        ],
+      },
+      layout: {
+        fillColor: (rowIndex) => (rowIndex === 0 ? colors.surfaceAlt : null),
+        hLineColor: () => colors.border,
+        vLineColor: () => colors.border,
+        paddingLeft: () => 6,
+        paddingRight: () => 6,
+        paddingTop: () => 7,
+        paddingBottom: () => 7,
+      },
+      fontSize: 8,
+    },
+  ];
+}
+
 export function createProposalPdfDefinition(proposal, logoDataUrl) {
   const colors = getDesignColors();
-  const sections = proposal.content?.sections || [];
+  const sections = normalizeProposalSections(proposal.content?.sections || []);
   const financialSections = sections.filter(isFinancialSection);
   const provider = proposal.content?.provider || {};
   const providerContact = [
@@ -223,6 +300,8 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
     });
     content.push(...financialSectionContent(proposal, [], colors));
   }
+
+  content.push(...maintenancePlanContent(colors));
 
   if (proposal.content?.city) {
     content.push({

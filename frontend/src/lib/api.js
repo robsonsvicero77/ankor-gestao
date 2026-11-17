@@ -67,6 +67,11 @@ export const settingsApi = {
   updateOpeningBalance: (data) => api.put('/settings/opening-balance', data),
 };
 
+export const adminAccountsApi = {
+  list: () => api.get('/admin/accounts'),
+  delete: (accountId) => api.delete(`/admin/accounts/${accountId}`),
+};
+
 export const alertsApi = {
   upcoming: () => api.get('/alerts/upcoming'),
 };

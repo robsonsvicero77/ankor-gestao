@@ -34,7 +34,8 @@ if APP_ENV not in {"development", "test", "production"}:
     raise RuntimeError("APP_ENV must be development, test, or production")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
-SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "").strip()
+SUPABASE_PUBLISHABLE_KEY = os.environ.get("SUPABASE_PUBLISHABLE_KEY", "").strip()
+SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY", "").strip()
 auth_http_client: Optional[httpx.AsyncClient] = None
 
 configured_origins = os.environ.get("CORS_ORIGINS", "")
@@ -698,7 +699,7 @@ class JobStatusResponse(BaseModel):
     message: str
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+    if not SUPABASE_URL or not SUPABASE_PUBLISHABLE_KEY:
         raise HTTPException(status_code=503, detail="Supabase Auth não está configurado")
 
     client = auth_http_client
@@ -710,7 +711,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         response = await client.get(
             f"{SUPABASE_URL}/auth/v1/user",
             headers={
-                "apikey": SUPABASE_ANON_KEY,
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
                 "Authorization": f"Bearer {credentials.credentials}",
             },
         )
@@ -759,6 +760,142 @@ def require_role(required_role: str):
 @api_router.get("/admin/only")
 async def admin_only_route(user=Depends(require_role("admin"))):
     return {"message": f"Olá, admin {user['email']}!"}
+
+
+async def _supabase_admin_request(method: str, path: str, **kwargs) -> httpx.Response:
+    if not SUPABASE_URL or not SUPABASE_SECRET_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Configure SUPABASE_SECRET_KEY para gerenciar contas",
+        )
+
+    client = auth_http_client
+    owns_client = client is None
+    if client is None:
+        client = httpx.AsyncClient(timeout=10)
+
+    try:
+        return await client.request(
+            method,
+            f"{SUPABASE_URL}/auth/v1/admin/{path}",
+            headers={"apikey": SUPABASE_SECRET_KEY},
+            **kwargs,
+        )
+    except httpx.RequestError as exc:
+        logger.exception("Supabase Auth Admin request failed")
+        raise HTTPException(
+            status_code=503,
+            detail="Não foi possível acessar o gerenciamento de contas",
+        ) from exc
+    finally:
+        if owns_client:
+            await client.aclose()
+
+
+async def _list_supabase_auth_users() -> list[dict]:
+    users = []
+    page = 1
+    per_page = 100
+    while True:
+        response = await _supabase_admin_request(
+            "GET",
+            "users",
+            params={"page": page, "per_page": per_page},
+        )
+        if response.status_code != 200:
+            logger.error(
+                "Supabase Auth Admin list users failed with HTTP %s",
+                response.status_code,
+            )
+            raise HTTPException(
+                status_code=502,
+                detail="Não foi possível carregar as contas cadastradas",
+            )
+
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            logger.error("Supabase Auth Admin returned invalid JSON for user list")
+            raise HTTPException(
+                status_code=502,
+                detail="Resposta inválida ao carregar as contas cadastradas",
+            ) from exc
+
+        page_users = payload.get("users") if isinstance(payload, dict) else None
+        if not isinstance(page_users, list):
+            logger.error("Supabase Auth Admin returned an invalid user list")
+            raise HTTPException(
+                status_code=502,
+                detail="Resposta inválida ao carregar as contas cadastradas",
+            )
+
+        users.extend(page_users)
+        if len(page_users) < per_page:
+            return users
+        page += 1
+
+
+@api_router.get("/admin/accounts")
+async def list_admin_accounts(admin=Depends(require_role("admin"))):
+    auth_users = await _list_supabase_auth_users()
+    profiles = await database.fetch_admin_user_profiles()
+    profiles_by_id = {profile["id"]: profile for profile in profiles}
+
+    accounts = []
+    for auth_user in auth_users:
+        if not isinstance(auth_user, dict) or not auth_user.get("id"):
+            logger.error("Supabase Auth Admin returned an invalid user record")
+            raise HTTPException(
+                status_code=502,
+                detail="Resposta inválida ao carregar as contas cadastradas",
+            )
+
+        profile = profiles_by_id.get(str(auth_user["id"]), {})
+        email = auth_user.get("email") or profile.get("email") or ""
+        metadata = auth_user.get("user_metadata") or auth_user.get("raw_user_meta_data") or {}
+        if not isinstance(metadata, dict):
+            metadata = {}
+        accounts.append({
+            "id": str(auth_user["id"]),
+            "name": profile.get("name") or metadata.get("name") or email.split("@", 1)[0],
+            "email": email,
+            "created_at": auth_user.get("created_at") or profile.get("created_at"),
+            "role": profile.get("role") or "user",
+        })
+
+    accounts.sort(key=lambda account: account["created_at"] or "", reverse=True)
+    return {"accounts": accounts}
+
+
+@api_router.delete("/admin/accounts/{account_id}")
+async def delete_admin_account(
+    account_id: uuid.UUID,
+    admin=Depends(require_role("admin")),
+):
+    if str(account_id) == str(admin["id"]):
+        raise HTTPException(status_code=409, detail="Não é possível excluir sua própria conta")
+
+    profile = await database.fetch_one("users", {"id": str(account_id)})
+    if profile and profile["role"] == "admin":
+        raise HTTPException(
+            status_code=409,
+            detail="Contas de administrador não podem ser excluídas por esta tela",
+        )
+
+    response = await _supabase_admin_request("DELETE", f"users/{account_id}")
+    if response.status_code == 404:
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    if response.status_code not in {200, 204}:
+        logger.error(
+            "Supabase Auth Admin delete user failed with HTTP %s",
+            response.status_code,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="Não foi possível excluir a conta",
+        )
+
+    return {"message": "Conta e dados associados excluídos permanentemente"}
 
 # ==================== AUTH ENDPOINTS ====================
 
@@ -2777,8 +2914,8 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_db_client():
     global auth_http_client
-    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
-        raise RuntimeError("SUPABASE_URL and SUPABASE_ANON_KEY must be configured")
+    if not SUPABASE_URL or not SUPABASE_PUBLISHABLE_KEY:
+        raise RuntimeError("SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY must be configured")
     await database.connect()
     auth_http_client = httpx.AsyncClient(timeout=10)
     logger.info("Connected to Supabase Postgres and Auth")
