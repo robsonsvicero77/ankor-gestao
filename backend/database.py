@@ -21,7 +21,8 @@ TABLE_COLUMNS = {
     "receivables": {
         "id", "tenant_id", "description", "client_name", "client_id", "amount_cents",
         "due_date", "paid_at", "is_recurring", "recurrence_type",
-        "recurrence_end_date", "parent_id", "created_at", "updated_at",
+        "recurrence_end_date", "parent_id", "contract_id",
+        "contract_payment_index", "created_at", "updated_at",
     },
     "payables": {
         "id", "tenant_id", "description", "category", "amount_cents",
@@ -59,7 +60,7 @@ TABLE_COLUMNS = {
 
 UUID_COLUMNS = {
     "id", "tenant_id", "owner_user_id", "parent_id", "reference_id",
-    "receivable_id", "client_id",
+    "receivable_id", "client_id", "contract_id",
 }
 DATE_COLUMNS = {"issue_date", "valid_until", "start_date", "end_date"}
 TIMESTAMP_COLUMNS = {
@@ -108,6 +109,73 @@ def _serialize_record(record: Optional[Mapping[str, Any]]) -> Optional[dict]:
         elif isinstance(value, uuid.UUID):
             result[column] = str(value)
     return result
+
+
+def _build_contract_receivable_records(
+    contract: Mapping[str, Any],
+    created_at: str,
+) -> list[dict]:
+    content = contract["content"]
+    if isinstance(content, str):
+        content = json.loads(content)
+    client_snapshot = contract["client_snapshot"]
+    if isinstance(client_snapshot, str):
+        client_snapshot = json.loads(client_snapshot)
+
+    client_name = client_snapshot.get("trade_name") or client_snapshot["name"]
+    records = []
+    for payment_index, payment in enumerate(content.get("payment_schedule", [])):
+        due_date = payment["due_date"]
+        if isinstance(due_date, date):
+            due_date = due_date.isoformat()
+        if len(due_date) == 10:
+            due_date = f"{due_date}T00:00:00+00:00"
+        records.append({
+            "id": str(uuid.uuid4()),
+            "tenant_id": contract["tenant_id"],
+            "description": f"{contract['title']} - {payment['description']}",
+            "client_name": client_name,
+            "client_id": contract["client_id"],
+            "contract_id": contract["id"],
+            "contract_payment_index": payment_index,
+            "amount_cents": payment["amount_cents"],
+            "due_date": due_date,
+            "is_recurring": False,
+            "created_at": created_at,
+            "updated_at": created_at,
+        })
+    return records
+
+
+async def _insert_on_connection(
+    connection: asyncpg.Connection,
+    table: str,
+    values: Mapping[str, Any],
+    on_conflict_do_nothing: bool = False,
+) -> Optional[dict]:
+    _validate_table(table)
+    columns = list(values)
+    if not columns:
+        raise ValueError("Cannot insert an empty record")
+    for column in columns:
+        _validate_column(table, column)
+    placeholders = ", ".join(f"${index}" for index in range(1, len(columns) + 1))
+    column_sql = ", ".join(f'"{column}"' for column in columns)
+    conflict_clause = ""
+    if on_conflict_do_nothing:
+        if table != "receivables":
+            raise ValueError("Conflict handling is only supported for receivables")
+        conflict_clause = (
+            ' ON CONFLICT ("tenant_id", "contract_id", "contract_payment_index")'
+            " DO NOTHING"
+        )
+    parameters = [_normalize_value(column, values[column]) for column in columns]
+    record = await connection.fetchrow(
+        f'INSERT INTO "{table}" ({column_sql}) VALUES ({placeholders})'
+        f'{conflict_clause} RETURNING *',
+        *parameters,
+    )
+    return _serialize_record(record)
 
 
 def _where_clause(
@@ -222,6 +290,91 @@ class PostgresDatabase:
             *parameters,
         )
         return _serialize_record(record)
+
+    async def create_contract_record(self, values: Mapping[str, Any]) -> tuple[dict, int]:
+        pool = self._require_pool()
+        created_at = values["created_at"]
+        async with pool.acquire() as connection:
+            async with connection.transaction():
+                contract = await _insert_on_connection(connection, "contracts", values)
+                receivables_created = 0
+                if contract["status"] == "ASSINADO":
+                    receivables_created = await self._insert_contract_receivables(
+                        connection,
+                        contract,
+                        created_at,
+                    )
+        return contract, receivables_created
+
+    async def update_contract_record(
+        self,
+        contract_id: str,
+        tenant_id: str,
+        values: Mapping[str, Any],
+    ) -> tuple[Optional[dict], int]:
+        pool = self._require_pool()
+        async with pool.acquire() as connection:
+            async with connection.transaction():
+                existing = await connection.fetchrow(
+                    'SELECT * FROM "contracts" '
+                    'WHERE id = $1 AND tenant_id = $2 FOR UPDATE',
+                    _normalize_value("id", contract_id),
+                    _normalize_value("tenant_id", tenant_id),
+                )
+                if existing is None:
+                    return None, 0
+
+                columns = list(values)
+                for column in columns:
+                    _validate_column("contracts", column)
+                set_clause = ", ".join(
+                    f'"{column}" = ${index}'
+                    for index, column in enumerate(columns, 1)
+                )
+                parameters = [
+                    _normalize_value(column, values[column])
+                    for column in columns
+                ]
+                parameters.extend([
+                    _normalize_value("id", contract_id),
+                    _normalize_value("tenant_id", tenant_id),
+                ])
+                updated = await connection.fetchrow(
+                    f'UPDATE "contracts" SET {set_clause} '
+                    f'WHERE id = ${len(columns) + 1} '
+                    f'AND tenant_id = ${len(columns) + 2} RETURNING *',
+                    *parameters,
+                )
+                contract = _serialize_record(updated)
+                receivables_created = 0
+                if (
+                    existing["status"] != "ASSINADO"
+                    and contract["status"] == "ASSINADO"
+                ):
+                    receivables_created = await self._insert_contract_receivables(
+                        connection,
+                        contract,
+                        values.get("updated_at"),
+                    )
+        return contract, receivables_created
+
+    async def _insert_contract_receivables(
+        self,
+        connection: asyncpg.Connection,
+        contract: Mapping[str, Any],
+        created_at: Optional[str],
+    ) -> int:
+        timestamp = created_at or datetime.now(timezone.utc).isoformat()
+        inserted = 0
+        for values in _build_contract_receivable_records(contract, timestamp):
+            record = await _insert_on_connection(
+                connection,
+                "receivables",
+                values,
+                on_conflict_do_nothing=True,
+            )
+            inserted += record is not None
+        return inserted
 
     async def update_one(
         self,

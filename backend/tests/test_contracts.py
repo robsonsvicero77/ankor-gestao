@@ -96,13 +96,12 @@ def test_create_contract_scopes_client_and_saves_snapshot(monkeypatch):
         assert filters == {"id": client_id, "tenant_id": tenant_id}
         return client
 
-    async def insert(table, values):
-        assert table == "contracts"
+    async def create_contract_record(values):
         saved.update(values)
-        return values
+        return values, 0
 
     monkeypatch.setattr(server.database, "fetch_one", fetch_one)
-    monkeypatch.setattr(server.database, "insert", insert)
+    monkeypatch.setattr(server.database, "create_contract_record", create_contract_record)
 
     result = asyncio.run(
         server.create_contract(
@@ -117,6 +116,37 @@ def test_create_contract_scopes_client_and_saves_snapshot(monkeypatch):
     assert saved["client_snapshot"]["name"] == client["name"]
     assert saved["content"]["provider"]["display_name"] == "Prestador"
     assert result.client_snapshot.name == client["name"]
+    assert result.receivables_created == 0
+
+
+def test_create_signed_contract_reports_generated_receivables(monkeypatch):
+    tenant_id = str(uuid.uuid4())
+    client_id = str(uuid.uuid4())
+    client = make_client(tenant_id, client_id)
+    saved = {}
+
+    async def fetch_one(table, filters):
+        assert table == "clients"
+        assert filters == {"id": client_id, "tenant_id": tenant_id}
+        return client
+
+    async def create_contract_record(values):
+        saved.update(values)
+        assert values["status"] == "ASSINADO"
+        return values, len(values["content"]["payment_schedule"])
+
+    monkeypatch.setattr(server.database, "fetch_one", fetch_one)
+    monkeypatch.setattr(server.database, "create_contract_record", create_contract_record)
+
+    result = asyncio.run(
+        server.create_contract(
+            make_contract_input(client_id, status="ASSINADO"),
+            {"tenant_id": tenant_id},
+        )
+    )
+
+    assert saved["status"] == "ASSINADO"
+    assert result.receivables_created == 2
 
 
 def test_create_contract_rejects_client_outside_tenant(monkeypatch):
@@ -178,19 +208,24 @@ def test_update_contract_preserves_client_snapshot(monkeypatch):
         assert filters == {"id": client_id, "tenant_id": tenant_id}
         return client
 
-    async def update_one(table, filters, values):
-        assert table == "contracts"
-        assert filters == {"id": contract_id, "tenant_id": tenant_id}
+    async def update_contract_record(received_id, received_tenant_id, values):
+        assert received_id == contract_id
+        assert received_tenant_id == tenant_id
         update_values.update(values)
-        return {**existing, **values}
+        receivables_created = 2 if values["status"] == "ASSINADO" else 0
+        return {**existing, **values}, receivables_created
 
     monkeypatch.setattr(server.database, "fetch_one", fetch_one)
-    monkeypatch.setattr(server.database, "update_one", update_one)
+    monkeypatch.setattr(server.database, "update_contract_record", update_contract_record)
 
     result = asyncio.run(
         server.update_contract(
             contract_id,
-            make_contract_input(client_id, title="Contrato atualizado"),
+            make_contract_input(
+                client_id,
+                title="Contrato atualizado",
+                status="ASSINADO",
+            ),
             {"tenant_id": tenant_id},
         )
     )
@@ -198,3 +233,44 @@ def test_update_contract_preserves_client_snapshot(monkeypatch):
     assert update_values["client_snapshot"]["name"] == "Nome congelado no contrato"
     assert result.client_snapshot.name == "Nome congelado no contrato"
     assert result.title == "Contrato atualizado"
+    assert result.receivables_created == 2
+
+
+def test_marking_contract_signed_returns_generated_receivable_count(monkeypatch):
+    tenant_id = str(uuid.uuid4())
+    contract_id = str(uuid.uuid4())
+    client_id = str(uuid.uuid4())
+    contract = {
+        "id": contract_id,
+        "tenant_id": tenant_id,
+        "client_id": client_id,
+        "title": "Contrato de identidade visual",
+        "issue_date": "2026-01-01",
+        "start_date": "2026-01-05",
+        "end_date": "2026-02-05",
+        "total_amount_cents": 125000,
+        "status": "RASCUNHO",
+        "client_snapshot": make_client(tenant_id, client_id),
+        "content": make_contract_input(client_id).model_dump(mode="json")["content"],
+        "created_at": "2026-01-01T00:00:00+00:00",
+        "updated_at": "2026-01-01T00:00:00+00:00",
+    }
+
+    async def update_contract_record(received_id, received_tenant_id, values):
+        assert received_id == contract_id
+        assert received_tenant_id == tenant_id
+        assert values["status"] == "ASSINADO"
+        return {**contract, **values}, 2
+
+    monkeypatch.setattr(server.database, "update_contract_record", update_contract_record)
+
+    result = asyncio.run(
+        server.update_contract_status(
+            contract_id,
+            server.ContractStatusUpdate(status="ASSINADO"),
+            {"tenant_id": tenant_id},
+        )
+    )
+
+    assert result.status == "ASSINADO"
+    assert result.receivables_created == 2

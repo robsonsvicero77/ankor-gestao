@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   CalendarDays,
   Download,
@@ -58,6 +58,7 @@ function StatusSelect({ contract, busy, onChange }) {
 
 export function ContractsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -66,6 +67,12 @@ export function ContractsPage() {
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const [downloadingPdf, setDownloadingPdf] = useState(null);
   const [actionError, setActionError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState(() => {
+    const count = location.state?.receivablesCreated || 0;
+    return count > 0
+      ? `${count} ${count === 1 ? 'recebível foi criado' : 'recebíveis foram criados'} a partir da agenda do contrato.`
+      : '';
+  });
 
   const loadContracts = useCallback(async () => {
     setLoading(true);
@@ -107,11 +114,16 @@ export function ContractsPage() {
     if (nextStatus === contract.status) return;
     setUpdatingStatus(contract.id);
     setActionError('');
+    setActionSuccess('');
     try {
       const response = await contractsApi.updateStatus(contract.id, nextStatus);
       setContracts((current) => current.map((item) => (
         item.id === contract.id ? response.data : item
       )));
+      const count = response.data.receivables_created || 0;
+      setActionSuccess(count > 0
+        ? `${count} ${count === 1 ? 'recebível foi criado' : 'recebíveis foram criados'} a partir da agenda do contrato.`
+        : 'Status do contrato atualizado.');
     } catch (error) {
       setActionError(getErrorMessage(error, 'Não foi possível atualizar o status.'));
     } finally {
@@ -190,6 +202,11 @@ export function ContractsPage() {
         {actionError && (
           <div role="alert" className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
             {actionError}
+          </div>
+        )}
+        {actionSuccess && (
+          <div role="status" className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+            {actionSuccess}
           </div>
         )}
 

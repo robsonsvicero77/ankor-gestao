@@ -1,74 +1,108 @@
-# Backend production deployment
+# Backend — configuração e implantação
 
-The application uses FastAPI on Vercel, Supabase Auth for accounts, and Supabase
-Postgres for application data. The React frontend remains a static site on
+O backend do AnkorGestão usa FastAPI e é publicado no Vercel. A autenticação é
+feita pelo Supabase Auth, e os dados da aplicação são armazenados no Supabase
+Postgres. O frontend React é publicado separadamente como site estático na
 Hostinger.
 
-## Supabase setup
+## Configuração do Supabase
 
-1. Create a Supabase project.
-2. Run [`db/migrations/001_create_tables.sql`](../db/migrations/001_create_tables.sql)
-   in the Supabase SQL Editor. It creates the application tables and provisions
-   a tenant/profile automatically for each new Auth user.
-3. Run [`db/migrations/002_create_proposals.sql`](../db/migrations/002_create_proposals.sql)
-   in the Supabase SQL Editor to enable proposal storage before using the page.
-4. Run [`db/migrations/003_create_clients.sql`](../db/migrations/003_create_clients.sql)
-   in the Supabase SQL Editor to enable tenant-scoped client storage.
-5. Run [`db/migrations/004_create_contracts.sql`](../db/migrations/004_create_contracts.sql)
-   after migration 003 to enable tenant-scoped contracts linked to saved clients.
-6. Run [`db/migrations/005_create_persistent_settings.sql`](../db/migrations/005_create_persistent_settings.sql)
-   after migration 004 to enable persistent settings, private avatars, and
-   client-linked receivables.
-7. Configure the project's Auth site URL as the Hostinger site URL. Add local
-   development URLs to the allowed redirect URLs if needed.
-8. Copy the project URL and publishable/anon key from the Supabase API settings.
-   The frontend key is public by design; never expose the Postgres password.
+1. Crie um projeto no Supabase.
+2. No SQL Editor do projeto, execute a migração
+   [`001_create_tables.sql`](../db/migrations/001_create_tables.sql). Ela cria
+   as tabelas da aplicação e configura a criação automática de um perfil e de
+   um tenant para cada novo usuário do Auth.
+3. Execute
+   [`002_create_proposals.sql`](../db/migrations/002_create_proposals.sql)
+   para habilitar o armazenamento de propostas.
+4. Execute
+   [`003_create_clients.sql`](../db/migrations/003_create_clients.sql)
+   para habilitar o cadastro de clientes com isolamento por tenant.
+5. Após a migração 003, execute
+   [`004_create_contracts.sql`](../db/migrations/004_create_contracts.sql)
+   para habilitar contratos vinculados aos clientes cadastrados.
+6. Após a migração 004, execute
+   [`005_create_persistent_settings.sql`](../db/migrations/005_create_persistent_settings.sql)
+   para habilitar as configurações persistentes, os avatares privados e o
+   vínculo entre recebíveis e clientes.
+7. Após a migração 005, execute
+   [`006_link_contract_receivables.sql`](../db/migrations/006_link_contract_receivables.sql)
+   para habilitar a geração de recebíveis vinculados às parcelas de contratos
+   assinados.
+8. Nas configurações de autenticação do Supabase, defina a URL do site da
+   Hostinger como URL do site. Se necessário, adicione URLs locais de
+   desenvolvimento à lista de redirecionamentos permitidos.
+9. Copie a URL do projeto e a chave publicável/anon nas configurações de API do
+   Supabase. Essa chave pode ser usada no frontend; nunca exponha a senha do
+   banco de dados.
 
-## Vercel API
+## Publicação da API no Vercel
 
-Deploy `backend/` as a separate Vercel project with `backend/` as its Root
-Directory. Set these environment variables for every Vercel environment used:
+Importe o repositório no Vercel e defina **Root Directory** como `backend`.
+Configure as variáveis de ambiente em cada ambiente Vercel que será utilizado:
 
-- `APP_ENV=production`
-- `SUPABASE_URL`: the project URL
-- `SUPABASE_ANON_KEY`: the project's publishable/anon key; the API uses it only
-  to ask Supabase Auth to validate the caller's access token
-- `DATABASE_URL`: the Supabase **transaction pooler** connection string (port
-  6543), with SSL enabled. It must use the database password, not an Auth key.
-- `CORS_ORIGINS`: comma-separated exact HTTPS origins for the Hostinger site
-- `RESEND_API_KEY` and `SENDER_EMAIL`: required only for email features
-- `CRON_SECRET`: a private random secret used to authorize the scheduled daily
-  due-alert job. Configure the same value as a Vercel environment variable.
+| Variável | Valor/uso |
+| --- | --- |
+| `APP_ENV` | Use `production` nas implantações publicadas. |
+| `SUPABASE_URL` | URL do projeto Supabase. |
+| `SUPABASE_ANON_KEY` | Chave publicável/anon. A API a utiliza para validar o token de acesso do usuário no Supabase Auth. |
+| `DATABASE_URL` | URI do **Transaction Pooler** do Supabase (porta `6543`), com SSL e senha do banco de dados. Não use uma chave do Auth. |
+| `CORS_ORIGINS` | Origens HTTPS exatas do site da Hostinger, separadas por vírgula e sem caminhos. |
+| `CRON_SECRET` | Segredo aleatório e privado usado para autorizar o job agendado. |
+| `RESEND_API_KEY` e `SENDER_EMAIL` | Opcionais; necessários para o envio de e-mails. |
 
-The daily Vercel Cron is declared in [`backend/vercel.json`](vercel.json) and
-runs at 09:00 in the São Paulo time zone. Client reminders go only to a linked
-client with an e-mail address; owner summaries go to the account e-mail.
-Automatic e-mail requires `RESEND_API_KEY`, `SENDER_EMAIL`, and `CRON_SECRET`.
+Para implantações Preview, configure as variáveis desse ambiente separadamente
+e, de preferência, use um projeto Supabase de testes em vez de dados reais.
 
-The API uses the database connection directly for SQL and enforces tenant scope
-in every data query. Do not put `DATABASE_URL` in the frontend or commit it.
-The async Postgres pool disables prepared statement caching for compatibility
-with Supabase's transaction pooler.
+O agendamento diário do Vercel está definido em
+[`vercel.json`](vercel.json). Ele executa às 12:00 UTC, equivalente a 09:00 no
+horário de São Paulo. Lembretes por e-mail são enviados somente a clientes
+vinculados que tenham endereço de e-mail cadastrado; os resumos do proprietário
+são enviados para o e-mail da conta. O envio automático requer
+`RESEND_API_KEY`, `SENDER_EMAIL` e `CRON_SECRET`.
 
-## Hostinger frontend
+A API acessa o Postgres diretamente e aplica o isolamento por tenant nas
+consultas. Não configure `DATABASE_URL` no frontend nem a inclua no repositório.
+O pool assíncrono desativa o cache de instruções preparadas para manter a
+compatibilidade com o Transaction Pooler do Supabase.
 
-Before building, set these frontend build variables:
+Ao criar um contrato já como assinado ou mudar seu status para **Assinado**, a
+API cria um recebível para cada parcela da agenda, vinculado ao cliente e ao
+contrato. A criação é transacional e protegida contra duplicidades. Alterações
+posteriores na agenda ou o cancelamento do contrato não modificam nem removem
+os recebíveis existentes; esses ajustes devem ser feitos na tela de Recebíveis.
+Contratos que já estavam assinados antes da aplicação da migração 006 não são
+processados retroativamente, para evitar duplicar recebíveis cadastrados
+manualmente.
 
-- `REACT_APP_BACKEND_URL`: the deployed Vercel API origin
-- `REACT_APP_SUPABASE_URL`: the Supabase project URL
-- `REACT_APP_SUPABASE_ANON_KEY`: the publishable/anon key
+## Publicação do frontend na Hostinger
 
-Run the frontend production build and upload the contents of `frontend/build`
-to `public_html`. The frontend `.htaccess` routes React Router paths to
-`index.html`.
+Antes de gerar o build, configure estas variáveis no frontend:
 
-For local development, copy `backend/.env.example` to `backend/.env` and
-`frontend/.env.example` to `frontend/.env`, fill in the project's values, and
-keep `APP_ENV=development`. Start the API from `backend/` with
-`uvicorn server:app --reload`; the React app defaults to the local API outside
-production.
+- `REACT_APP_BACKEND_URL`: origem da API publicada no Vercel.
+- `REACT_APP_SUPABASE_URL`: URL do projeto Supabase.
+- `REACT_APP_SUPABASE_ANON_KEY`: chave publicável/anon do projeto.
 
-The optional `backend_test.py` integration suite requires a separate test-only
-confirmed Supabase account and `SUPABASE_TEST_EMAIL` / `SUPABASE_TEST_PASSWORD`,
-in addition to `SUPABASE_URL` and `SUPABASE_ANON_KEY`. The suite writes
-financial records, so do not point it at a tenant containing real data.
+Gere o build de produção na pasta `frontend/` e envie o conteúdo de
+`frontend/build` para `public_html`. O arquivo `.htaccess` do frontend direciona
+as rotas do React Router para `index.html`.
+
+## Desenvolvimento local
+
+Copie `backend/.env.example` para `backend/.env` e
+`frontend/.env.example` para `frontend/.env`; preencha os valores necessários e
+mantenha `APP_ENV=development`. Inicie a API a partir da pasta `backend/`:
+
+```bash
+uvicorn server:app --reload
+```
+
+Fora do ambiente de produção, o React usa a API local por padrão.
+
+## Testes de integração opcionais
+
+A suíte `backend_test.py` exige uma conta de teste separada e confirmada no
+Supabase, além das variáveis `SUPABASE_TEST_EMAIL` e
+`SUPABASE_TEST_PASSWORD`. Também são necessárias `SUPABASE_URL` e
+`SUPABASE_ANON_KEY`. A suíte grava dados financeiros; não a execute em um tenant
+que contenha dados reais.

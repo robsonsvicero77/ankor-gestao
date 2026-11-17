@@ -729,7 +729,7 @@ export function SettingsPage() {
                 <div className="flex items-start gap-3 pt-5 text-sm text-zinc-300">
                   <Mail className="mt-0.5 h-4 w-4 shrink-0 text-zinc-300" />
                   <p className="max-w-[65ch] leading-relaxed">
-                    O envio automático depende de RESEND_API_KEY, SENDER_EMAIL e do agendamento diário configurado no Vercel.
+                    Lembretes por e-mail são enviados somente a clientes vinculados que tenham endereço de e-mail cadastrado.
                   </p>
                 </div>
               </div>

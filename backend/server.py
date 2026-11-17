@@ -136,6 +136,8 @@ class ReceivableResponse(BaseModel):
     description: str
     client_name: str
     client_id: Optional[str] = None
+    contract_id: Optional[str] = None
+    contract_payment_index: Optional[int] = None
     amount_cents: int
     due_date: str
     paid_at: Optional[str] = None
@@ -616,6 +618,10 @@ class ContractResponse(BaseModel):
     content: ContractContent
     created_at: str
     updated_at: str
+
+
+class ContractMutationResponse(ContractResponse):
+    receivables_created: int = 0
 
 
 class LedgerEntryResponse(BaseModel):
@@ -1670,7 +1676,7 @@ async def list_contracts(
 
 @api_router.post(
     "/contracts",
-    response_model=ContractResponse,
+    response_model=ContractMutationResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_contract(
@@ -1688,8 +1694,7 @@ async def create_contract(
 
     now = datetime.now(timezone.utc).isoformat()
     contract_data = data.model_dump(mode="json")
-    contract = await database.insert(
-        "contracts",
+    contract, receivables_created = await database.create_contract_record(
         {
             "id": str(uuid.uuid4()),
             "tenant_id": tenant_id,
@@ -1704,9 +1709,12 @@ async def create_contract(
             "content": contract_data["content"],
             "created_at": now,
             "updated_at": now,
-        },
+        }
     )
-    return ContractResponse(**contract)
+    return ContractMutationResponse(
+        **contract,
+        receivables_created=receivables_created,
+    )
 
 
 @api_router.get("/contracts/{contract_id}", response_model=ContractResponse)
@@ -1720,7 +1728,7 @@ async def get_contract(contract_id: str, current_user: dict = Depends(get_curren
     return ContractResponse(**contract)
 
 
-@api_router.put("/contracts/{contract_id}", response_model=ContractResponse)
+@api_router.put("/contracts/{contract_id}", response_model=ContractMutationResponse)
 async def update_contract(
     contract_id: str,
     data: ContractInput,
@@ -1748,9 +1756,9 @@ async def update_contract(
         if str(existing["client_id"]) == client_id
         else _contract_client_snapshot(client)
     )
-    updated = await database.update_one(
-        "contracts",
-        {"id": contract_id, "tenant_id": tenant_id},
+    updated, receivables_created = await database.update_contract_record(
+        contract_id,
+        tenant_id,
         {
             "client_id": client_id,
             "title": contract_data["title"],
@@ -1766,18 +1774,21 @@ async def update_contract(
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
-    return ContractResponse(**updated)
+    return ContractMutationResponse(
+        **updated,
+        receivables_created=receivables_created,
+    )
 
 
-@api_router.patch("/contracts/{contract_id}/status", response_model=ContractResponse)
+@api_router.patch("/contracts/{contract_id}/status", response_model=ContractMutationResponse)
 async def update_contract_status(
     contract_id: str,
     data: ContractStatusUpdate,
     current_user: dict = Depends(get_current_user),
 ):
-    updated = await database.update_one(
-        "contracts",
-        {"id": contract_id, "tenant_id": current_user["tenant_id"]},
+    updated, receivables_created = await database.update_contract_record(
+        contract_id,
+        current_user["tenant_id"],
         {
             "status": data.status,
             "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -1785,7 +1796,10 @@ async def update_contract_status(
     )
     if not updated:
         raise HTTPException(status_code=404, detail="Contrato não encontrado")
-    return ContractResponse(**updated)
+    return ContractMutationResponse(
+        **updated,
+        receivables_created=receivables_created,
+    )
 
 
 # ==================== LEDGER ENDPOINTS ====================

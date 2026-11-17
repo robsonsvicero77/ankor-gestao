@@ -384,12 +384,15 @@ export function ContractEditorPage() {
 
     setSubmitting(true);
     try {
+      let response;
       if (isEditing) {
-        await contractsApi.update(contractId, payload);
+        response = await contractsApi.update(contractId, payload);
       } else {
-        await contractsApi.create(payload);
+        response = await contractsApi.create(payload);
       }
-      navigate('/contracts');
+      navigate('/contracts', {
+        state: { receivablesCreated: response.data.receivables_created || 0 },
+      });
     } catch (saveError) {
       setError(getErrorMessage(saveError, 'Não foi possível salvar o contrato.'));
     } finally {
