@@ -6,7 +6,7 @@ import os
 import tempfile
 from datetime import datetime, timedelta
 
-class FinPredictAPITester:
+class AnkorGestãoAPITester:
     def __init__(self, base_url=None):
         base_url = base_url or os.environ.get("API_BASE_URL", "http://localhost:8000")
         self.base_url = base_url
@@ -602,7 +602,7 @@ Aluguel Office,aluguel,1500,05/01/2026"""
 
     def run_all_tests(self):
         """Run complete test suite including new features"""
-        print("🚀 Starting FinPredict API Test Suite (Iteration 2)")
+        print("🚀 Starting AnkorGestão API Test Suite (Iteration 2)")
         print("=" * 55)
         
         # Test sequence
@@ -660,7 +660,7 @@ Aluguel Office,aluguel,1500,05/01/2026"""
 
 def main():
     """Main test runner"""
-    tester = FinPredictAPITester()
+    tester = AnkorGestãoAPITester()
     success = tester.run_all_tests()
     
     # Save detailed results

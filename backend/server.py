@@ -57,7 +57,7 @@ if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
 # Create the main app
-app = FastAPI(title="Ankor Gestão API", version="1.0.0")
+app = FastAPI(title="AnkorGestão API", version="1.0.0")
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 
@@ -408,6 +408,176 @@ class ClientResponse(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     notes: Optional[str] = None
+    created_at: str
+    updated_at: str
+
+
+ContractStatus = Literal[
+    "RASCUNHO",
+    "ENVIADO",
+    "ASSINADO",
+    "EM_EXECUCAO",
+    "CONCLUIDO",
+    "CANCELADO",
+]
+
+
+class ContractProvider(BaseModel):
+    display_name: str = Field(min_length=1, max_length=200)
+    legal_name: Optional[str] = Field(default=None, max_length=200)
+    document: Optional[str] = Field(default=None, max_length=32)
+    address: Optional[str] = Field(default=None, max_length=500)
+    phone: Optional[str] = Field(default=None, max_length=40)
+    email: Optional[str] = Field(default=None, max_length=200)
+    representative_name: Optional[str] = Field(default=None, max_length=200)
+
+    @field_validator(
+        "display_name", "legal_name", "document", "address", "phone", "email",
+        "representative_name",
+        mode="before",
+    )
+    @classmethod
+    def normalize_provider_text(cls, value: Any) -> Any:
+        if value is None or not isinstance(value, str):
+            return value
+        value = value.strip()
+        return value or None
+
+
+class ContractPayment(BaseModel):
+    description: str = Field(min_length=1, max_length=200)
+    due_date: date
+    amount_cents: int = Field(ge=0)
+
+    @field_validator("description")
+    @classmethod
+    def payment_description_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("A descrição da parcela é obrigatória")
+        return value
+
+
+class ContractSection(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    body: str = Field(default="", max_length=20000)
+
+    @field_validator("title")
+    @classmethod
+    def section_title_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("O título da cláusula é obrigatório")
+        return value
+
+
+class ContractContent(BaseModel):
+    service_types: List[str] = Field(min_length=1, max_length=10)
+    custom_service: Optional[str] = Field(default=None, max_length=500)
+    object_description: str = Field(min_length=1, max_length=5000)
+    scope: str = Field(min_length=1, max_length=20000)
+    deliverables: Optional[str] = Field(default=None, max_length=10000)
+    timeline_notes: Optional[str] = Field(default=None, max_length=5000)
+    client_representative: Optional[str] = Field(default=None, max_length=200)
+    contract_city: Optional[str] = Field(default=None, max_length=120)
+    provider: ContractProvider
+    payment_schedule: List[ContractPayment] = Field(default_factory=list, max_length=24)
+    clauses: List[ContractSection] = Field(min_length=1, max_length=20)
+
+    @field_validator("service_types")
+    @classmethod
+    def service_types_must_not_be_blank(cls, values: List[str]) -> List[str]:
+        normalized = [value.strip() for value in values if value.strip()]
+        if not normalized:
+            raise ValueError("Selecione ao menos um tipo de serviço")
+        return normalized
+
+    @field_validator("object_description", "scope")
+    @classmethod
+    def required_contract_text_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Este campo é obrigatório")
+        return value
+
+    @field_validator(
+        "custom_service", "deliverables", "timeline_notes",
+        "client_representative", "contract_city",
+        mode="before",
+    )
+    @classmethod
+    def normalize_contract_optional_text(cls, value: Any) -> Any:
+        if value is None or not isinstance(value, str):
+            return value
+        value = value.strip()
+        return value or None
+
+
+class ContractClientSnapshot(BaseModel):
+    person_type: Literal["PF", "PJ"]
+    name: str
+    trade_name: Optional[str] = None
+    document: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    contact_name: Optional[str] = None
+    postal_code: Optional[str] = None
+    street: Optional[str] = None
+    number: Optional[str] = None
+    complement: Optional[str] = None
+    district: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+
+
+class ContractInput(BaseModel):
+    client_id: uuid.UUID
+    title: str = Field(min_length=1, max_length=200)
+    issue_date: date
+    start_date: date
+    end_date: Optional[date] = None
+    total_amount_cents: int = Field(ge=0)
+    status: ContractStatus = "RASCUNHO"
+    content: ContractContent
+
+    @field_validator("title")
+    @classmethod
+    def contract_title_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("O título do contrato é obrigatório")
+        return value
+
+    @model_validator(mode="after")
+    def validate_contract_dates_and_payment_total(self):
+        if self.end_date is not None and self.end_date < self.start_date:
+            raise ValueError("A data final não pode ser anterior ao início")
+        if self.total_amount_cents and not self.content.payment_schedule:
+            raise ValueError("Inclua ao menos uma parcela para o valor do contrato")
+        scheduled_total = sum(
+            payment.amount_cents for payment in self.content.payment_schedule
+        )
+        if scheduled_total != self.total_amount_cents:
+            raise ValueError("A soma das parcelas deve corresponder ao valor total")
+        return self
+
+
+class ContractStatusUpdate(BaseModel):
+    status: ContractStatus
+
+
+class ContractResponse(BaseModel):
+    id: str
+    tenant_id: str
+    client_id: str
+    title: str
+    issue_date: str
+    start_date: str
+    end_date: Optional[str] = None
+    total_amount_cents: int
+    status: ContractStatus
+    client_snapshot: ContractClientSnapshot
+    content: ContractContent
     created_at: str
     updated_at: str
 
@@ -1185,6 +1355,152 @@ async def update_client(
     return ClientResponse(**client)
 
 
+# ==================== CONTRACTS ENDPOINTS ====================
+
+def _contract_client_snapshot(client: dict) -> dict:
+    return {
+        field: client.get(field)
+        for field in ContractClientSnapshot.model_fields
+    }
+
+
+@api_router.get("/contracts", response_model=List[ContractResponse])
+async def list_contracts(
+    status_filter: Optional[ContractStatus] = None,
+    current_user: dict = Depends(get_current_user),
+):
+    contracts = await database.fetch_many(
+        "contracts",
+        {"tenant_id": current_user["tenant_id"]},
+        1000,
+        order_by="updated_at",
+        descending=True,
+    )
+    if status_filter:
+        contracts = [contract for contract in contracts if contract["status"] == status_filter]
+    return [ContractResponse(**contract) for contract in contracts]
+
+
+@api_router.post(
+    "/contracts",
+    response_model=ContractResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_contract(
+    data: ContractInput,
+    current_user: dict = Depends(get_current_user),
+):
+    tenant_id = current_user["tenant_id"]
+    client_id = str(data.client_id)
+    client = await database.fetch_one(
+        "clients",
+        {"id": client_id, "tenant_id": tenant_id},
+    )
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+
+    now = datetime.now(timezone.utc).isoformat()
+    contract_data = data.model_dump(mode="json")
+    contract = await database.insert(
+        "contracts",
+        {
+            "id": str(uuid.uuid4()),
+            "tenant_id": tenant_id,
+            "client_id": client_id,
+            "title": contract_data["title"],
+            "issue_date": contract_data["issue_date"],
+            "start_date": contract_data["start_date"],
+            "end_date": contract_data["end_date"],
+            "total_amount_cents": contract_data["total_amount_cents"],
+            "status": contract_data["status"],
+            "client_snapshot": _contract_client_snapshot(client),
+            "content": contract_data["content"],
+            "created_at": now,
+            "updated_at": now,
+        },
+    )
+    return ContractResponse(**contract)
+
+
+@api_router.get("/contracts/{contract_id}", response_model=ContractResponse)
+async def get_contract(contract_id: str, current_user: dict = Depends(get_current_user)):
+    contract = await database.fetch_one(
+        "contracts",
+        {"id": contract_id, "tenant_id": current_user["tenant_id"]},
+    )
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contrato não encontrado")
+    return ContractResponse(**contract)
+
+
+@api_router.put("/contracts/{contract_id}", response_model=ContractResponse)
+async def update_contract(
+    contract_id: str,
+    data: ContractInput,
+    current_user: dict = Depends(get_current_user),
+):
+    tenant_id = current_user["tenant_id"]
+    existing = await database.fetch_one(
+        "contracts",
+        {"id": contract_id, "tenant_id": tenant_id},
+    )
+    if not existing:
+        raise HTTPException(status_code=404, detail="Contrato não encontrado")
+
+    client_id = str(data.client_id)
+    client = await database.fetch_one(
+        "clients",
+        {"id": client_id, "tenant_id": tenant_id},
+    )
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+
+    contract_data = data.model_dump(mode="json")
+    client_snapshot = (
+        existing["client_snapshot"]
+        if str(existing["client_id"]) == client_id
+        else _contract_client_snapshot(client)
+    )
+    updated = await database.update_one(
+        "contracts",
+        {"id": contract_id, "tenant_id": tenant_id},
+        {
+            "client_id": client_id,
+            "title": contract_data["title"],
+            "issue_date": contract_data["issue_date"],
+            "start_date": contract_data["start_date"],
+            "end_date": contract_data["end_date"],
+            "total_amount_cents": contract_data["total_amount_cents"],
+            "status": contract_data["status"],
+            "client_snapshot": client_snapshot,
+            "content": contract_data["content"],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Contrato não encontrado")
+    return ContractResponse(**updated)
+
+
+@api_router.patch("/contracts/{contract_id}/status", response_model=ContractResponse)
+async def update_contract_status(
+    contract_id: str,
+    data: ContractStatusUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    updated = await database.update_one(
+        "contracts",
+        {"id": contract_id, "tenant_id": current_user["tenant_id"]},
+        {
+            "status": data.status,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Contrato não encontrado")
+    return ContractResponse(**updated)
+
+
 # ==================== LEDGER ENDPOINTS ====================
 
 class LedgerFilterParams(BaseModel):
@@ -1668,7 +1984,7 @@ async def send_payment_reminder(
         <p>Atenciosamente,<br>{user['name']}</p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
         <p style="color: #6b7280; font-size: 12px;">
-            Este email foi enviado via FinPredict
+            Este email foi enviado via AnkorGestão
         </p>
     </div>
     """
@@ -1784,7 +2100,7 @@ async def send_automatic_reminder(receivable: dict, user: dict):
         <p>Atenciosamente,<br>{user['name']}</p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
         <p style="color: #6b7280; font-size: 12px;">
-            Este email foi enviado automaticamente via FinPredict
+            Este email foi enviado automaticamente via AnkorGestão
         </p>
     </div>
     """
@@ -1906,7 +2222,7 @@ async def get_onboarding_status(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/")
 async def root():
-    return {"message": "Ankor Gestão API v1.0.0"}
+    return {"message": "AnkorGestão API v1.0.0"}
 
 # Include router and setup middleware
 app.include_router(api_router)

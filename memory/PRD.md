@@ -1,4 +1,4 @@
-# FinPredict - PRD (Product Requirements Document)
+# AnkorGestão - PRD (Product Requirements Document)
 
 ## Visão Geral
 **Produto**: Painel de previsibilidade financeira para prestadores de serviço
@@ -123,7 +123,7 @@ Sistema SaaS de previsibilidade financeira com:
 ### Email (Resend)
 - **Variáveis de ambiente**:
   - `RESEND_API_KEY`: API key do Resend (opcional, mock mode se não configurado)
-  - `SENDER_EMAIL`: Email remetente (default: noreply@finpredict.com)
+  - `SENDER_EMAIL`: Email remetente (default: noreply@AnkorGestão.com)
 - **Modo teste**: Emails são logados sem envio real
 - **Produção**: Configurar RESEND_API_KEY para envio real
 

@@ -102,6 +102,15 @@ export const clientsApi = {
   update: (id, data) => api.put(`/clients/${id}`, data),
 };
 
+// Contracts API
+export const contractsApi = {
+  list: (status) => api.get('/contracts', { params: { status_filter: status } }),
+  get: (id) => api.get(`/contracts/${id}`),
+  create: (data) => api.post('/contracts', data),
+  update: (id, data) => api.put(`/contracts/${id}`, data),
+  updateStatus: (id, status) => api.patch(`/contracts/${id}/status`, { status }),
+};
+
 // Dashboard API
 export const dashboardApi = {
   get: () => api.get('/dashboard'),

@@ -34,6 +34,11 @@ TABLE_COLUMNS = {
         "complement", "district", "city", "state", "notes", "created_at",
         "updated_at",
     },
+    "contracts": {
+        "id", "tenant_id", "client_id", "title", "issue_date", "start_date",
+        "end_date", "total_amount_cents", "status", "client_snapshot",
+        "content", "created_at", "updated_at",
+    },
     "ledger_entries": {
         "id", "tenant_id", "entry_type", "direction", "amount_cents",
         "occurred_at", "reference_type", "reference_id", "note", "created_at",
@@ -49,14 +54,14 @@ TABLE_COLUMNS = {
 
 UUID_COLUMNS = {
     "id", "tenant_id", "owner_user_id", "parent_id", "reference_id",
-    "receivable_id",
+    "receivable_id", "client_id",
 }
-DATE_COLUMNS = {"issue_date", "valid_until"}
+DATE_COLUMNS = {"issue_date", "valid_until", "start_date", "end_date"}
 TIMESTAMP_COLUMNS = {
     "created_at", "updated_at", "last_login_at", "due_date", "paid_at",
     "recurrence_end_date", "occurred_at", "sent_at", "last_run",
 }
-JSON_COLUMNS = {"results", "content"}
+JSON_COLUMNS = {"results", "content", "client_snapshot"}
 FILTER_OPERATORS = {"$gte": ">=", "$lte": "<=", "$gt": ">", "$lt": "<"}
 
 

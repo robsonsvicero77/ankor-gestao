@@ -9,6 +9,8 @@ import { ReceivablesPage } from './pages/ReceivablesPage';
 import { PayablesPage } from './pages/PayablesPage';
 import { ProposalsPage } from './pages/ProposalsPage';
 import { ProposalEditorPage } from './pages/ProposalEditorPage';
+import { ContractsPage } from './pages/ContractsPage';
+import { ContractEditorPage } from './pages/ContractEditorPage';
 import { ClientsPage } from './pages/ClientsPage';
 import { ClientEditorPage } from './pages/ClientEditorPage';
 import { LedgerPage } from './pages/LedgerPage';
@@ -139,6 +141,30 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ProposalEditorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/contracts"
+        element={
+          <ProtectedRoute>
+            <ContractsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/contracts/new"
+        element={
+          <ProtectedRoute>
+            <ContractEditorPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/contracts/:contractId/edit"
+        element={
+          <ProtectedRoute>
+            <ContractEditorPage />
           </ProtectedRoute>
         }
       />

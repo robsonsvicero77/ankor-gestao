@@ -6,6 +6,7 @@ import {
   ArrowDownCircle, 
   ArrowUpCircle, 
   FileText,
+  FileSignature,
   Users,
   BookOpen,
   LogOut,
@@ -21,6 +22,7 @@ const navItems = [
   { path: '/receivables', label: 'Receitas', icon: ArrowDownCircle },
   { path: '/payables', label: 'Despesas', icon: ArrowUpCircle },
   { path: '/proposals', label: 'Propostas', icon: FileText },
+  { path: '/contracts', label: 'Contratos', icon: FileSignature },
   { path: '/clients', label: 'Clientes', icon: Users },
   { path: '/ledger', label: 'Histórico', icon: BookOpen },
   { path: '/settings', label: 'Configurações', icon: Settings },
@@ -45,7 +47,7 @@ export function Layout({ children }) {
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center px-6 border-b border-zinc-800">
             <h1 className="text-xl font-bold text-white">
-              Fin<span className="text-emerald-500">Predict</span>
+              Ankor<span className="text-emerald-500">Gestão</span>
             </h1>
           </div>
 
@@ -103,7 +105,7 @@ export function Layout({ children }) {
       {/* Mobile Header */}
       <header className="lg:hidden sticky top-0 z-50 flex h-14 items-center justify-between border-b border-zinc-800 bg-[#18181b]/95 backdrop-blur px-4">
         <h1 className="text-lg font-bold text-white">
-          Fin<span className="text-emerald-500">Predict</span>
+          Ankor<span className="text-emerald-500">Gestão</span>
         </h1>
         <Button
           variant="ghost"

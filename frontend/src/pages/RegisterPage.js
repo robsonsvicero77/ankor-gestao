@@ -75,7 +75,7 @@ export function RegisterPage() {
           <CardHeader className="space-y-1">
             <div className="mb-4 lg:hidden">
               <h1 className="text-2xl font-bold text-white">
-                Fin<span className="text-emerald-500">Predict</span>
+                Ankor<span className="text-emerald-500">Gestão</span>
               </h1>
             </div>
             <CardTitle className="text-2xl text-white">Criar conta</CardTitle>

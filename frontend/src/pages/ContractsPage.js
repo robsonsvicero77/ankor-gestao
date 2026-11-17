@@ -1,0 +1,387 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  CalendarDays,
+  Download,
+  FileText,
+  Loader2,
+  Plus,
+  Search,
+} from 'lucide-react';
+import { Layout } from '../components/Layout';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { contractsApi } from '../lib/api';
+import { downloadContractPdf } from '../lib/contractPdf';
+import {
+  CONTRACT_STATUSES,
+  formatCurrency,
+  formatDate,
+  getContractServiceLabel,
+  getNextScheduledPayment,
+} from '../lib/contractUtils';
+
+const STATUS_STYLES = {
+  RASCUNHO: 'border-zinc-700 bg-zinc-800/60 text-zinc-300',
+  ENVIADO: 'border-sky-500/30 bg-sky-500/10 text-sky-300',
+  ASSINADO: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-300',
+  EM_EXECUCAO: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+  CONCLUIDO: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
+  CANCELADO: 'border-zinc-700 bg-zinc-900 text-zinc-400',
+};
+
+function getErrorMessage(error, fallback) {
+  const detail = error.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    const firstMessage = detail.find((issue) => issue.msg)?.msg;
+    if (firstMessage) return firstMessage.replace(/^Value error,\s*/, '');
+  }
+  return error.message || fallback;
+}
+
+function StatusSelect({ contract, busy, onChange }) {
+  return (
+    <select
+      aria-label={`Status do contrato ${contract.title}`}
+      className={`max-w-full rounded-full border px-3 py-1.5 text-xs font-medium outline-none transition focus:ring-2 focus:ring-emerald-500/40 ${STATUS_STYLES[contract.status] || STATUS_STYLES.RASCUNHO}`}
+      disabled={busy}
+      value={contract.status}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      {CONTRACT_STATUSES.map((status) => (
+        <option key={status.value} value={status.value}>{status.label}</option>
+      ))}
+    </select>
+  );
+}
+
+export function ContractsPage() {
+  const navigate = useNavigate();
+  const [contracts, setContracts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('TODAS');
+  const [updatingStatus, setUpdatingStatus] = useState(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(null);
+  const [actionError, setActionError] = useState('');
+
+  const loadContracts = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const response = await contractsApi.list();
+      setContracts(response.data);
+    } catch (error) {
+      setLoadError(getErrorMessage(error, 'Não foi possível carregar os contratos.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadContracts();
+  }, [loadContracts]);
+
+  const filteredContracts = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase('pt-BR');
+    return contracts.filter((contract) => {
+      const searchableText = [
+        contract.title,
+        contract.client_snapshot.name,
+        contract.client_snapshot.trade_name,
+        getContractServiceLabel(contract),
+      ].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR');
+      return (statusFilter === 'TODAS' || contract.status === statusFilter)
+        && (!term || searchableText.includes(term));
+    });
+  }, [contracts, search, statusFilter]);
+
+  const statusCounts = useMemo(() => contracts.reduce((counts, contract) => {
+    counts[contract.status] = (counts[contract.status] || 0) + 1;
+    return counts;
+  }, {}), [contracts]);
+
+  const handleStatusChange = async (contract, nextStatus) => {
+    if (nextStatus === contract.status) return;
+    setUpdatingStatus(contract.id);
+    setActionError('');
+    try {
+      const response = await contractsApi.updateStatus(contract.id, nextStatus);
+      setContracts((current) => current.map((item) => (
+        item.id === contract.id ? response.data : item
+      )));
+    } catch (error) {
+      setActionError(getErrorMessage(error, 'Não foi possível atualizar o status.'));
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  const handleDownload = async (contract) => {
+    setDownloadingPdf(contract.id);
+    setActionError('');
+    try {
+      await downloadContractPdf(contract);
+    } catch (error) {
+      setActionError(getErrorMessage(error, 'Não foi possível gerar o PDF.'));
+    } finally {
+      setDownloadingPdf(null);
+    }
+  };
+
+  const openContract = (contract) => navigate(`/contracts/${contract.id}/edit`);
+
+  return (
+    <Layout>
+      <div className="mx-auto max-w-7xl space-y-6 selection:bg-emerald-500/30 selection:text-emerald-100" data-testid="contracts-page">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white lg:text-3xl">Contratos</h1>
+            <p className="mt-1 max-w-2xl text-sm text-zinc-400">
+              Organize escopo, parcelas e andamento dos serviços contratados.
+            </p>
+          </div>
+          <Button
+            onClick={() => navigate('/contracts/new')}
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            data-testid="create-contract-btn"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Novo contrato
+          </Button>
+        </header>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-zinc-400" aria-live="polite">
+          <span className="font-medium text-zinc-200">{contracts.length} contratos</span>
+          <span aria-hidden="true">·</span>
+          <span>{statusCounts.ASSINADO || 0} assinados</span>
+          <span aria-hidden="true">·</span>
+          <span>{statusCounts.EM_EXECUCAO || 0} em execução</span>
+          <span aria-hidden="true">·</span>
+          <span>{statusCounts.CONCLUIDO || 0} concluídos</span>
+        </div>
+
+        <div className="flex flex-col gap-3 border-y border-zinc-800 py-4 sm:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar por contrato, cliente ou serviço"
+              aria-label="Buscar contratos"
+              className="border-zinc-700 bg-zinc-900 pl-9 text-white caret-emerald-400 placeholder:text-zinc-400"
+            />
+          </div>
+          <select
+            aria-label="Filtrar por status"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-10 rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-200 outline-none focus:ring-2 focus:ring-emerald-500/40 sm:w-56"
+          >
+            <option value="TODAS">Todos os status</option>
+            {CONTRACT_STATUSES.map((status) => (
+              <option key={status.value} value={status.value}>{status.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {actionError && (
+          <div role="alert" className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+            {actionError}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex min-h-48 items-center justify-center text-zinc-400" role="status">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin text-emerald-500" />
+            Carregando contratos...
+          </div>
+        ) : loadError ? (
+          <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-6 text-center">
+            <p className="text-sm text-rose-200" role="alert">{loadError}</p>
+            <Button onClick={loadContracts} variant="outline" className="mt-4 border-zinc-700 text-zinc-200 hover:bg-zinc-800">
+              Tentar novamente
+            </Button>
+          </div>
+        ) : filteredContracts.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-zinc-700 px-5 py-14 text-center">
+            <FileText className="mx-auto h-8 w-8 text-zinc-500" />
+            <h2 className="mt-4 text-base font-semibold text-white">
+              {contracts.length ? 'Nenhum contrato encontrado' : 'Sua lista de contratos está vazia'}
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-zinc-400">
+              {contracts.length
+                ? 'Ajuste a busca ou o filtro de status para ver outros contratos.'
+                : 'Crie um contrato vinculado a um cliente cadastrado e organize o escopo e as parcelas.'}
+            </p>
+            {!contracts.length && (
+              <Button
+                onClick={() => navigate('/contracts/new')}
+                className="mt-5 bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Criar contrato
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-zinc-800 bg-[#18181b]">
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[1060px] text-left">
+                <thead className="border-b border-zinc-800 bg-zinc-900/70">
+                  <tr className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+                    <th scope="col" className="px-5 py-3">Contrato / cliente</th>
+                    <th scope="col" className="px-4 py-3">Serviço</th>
+                    <th scope="col" className="px-4 py-3 text-right">Valor total</th>
+                    <th scope="col" className="px-4 py-3">Próximo vencimento</th>
+                    <th scope="col" className="px-4 py-3">Status</th>
+                    <th scope="col" className="px-5 py-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800">
+                  {filteredContracts.map((contract) => {
+                    const nextPayment = getNextScheduledPayment(contract);
+                    return (
+                      <tr key={contract.id} className="transition-colors hover:bg-zinc-800/35">
+                        <td className="px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => openContract(contract)}
+                            className="max-w-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                          >
+                            <span className="block truncate font-medium text-white">{contract.title}</span>
+                            <span className="mt-1 block max-w-xs truncate text-xs text-zinc-400">
+                              {contract.client_snapshot.name}
+                            </span>
+                          </button>
+                        </td>
+                        <td className="max-w-[15rem] px-4 py-4 text-sm text-zinc-300">
+                          <span className="block truncate">{getContractServiceLabel(contract)}</span>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 text-right font-medium tabular-nums text-zinc-200">
+                          {formatCurrency(contract.total_amount_cents)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-4 text-sm text-zinc-300">
+                          {nextPayment ? (
+                            <>
+                              <span className="block font-medium tabular-nums">{formatCurrency(nextPayment.amount_cents)}</span>
+                              <span className="mt-1 flex items-center gap-1.5 text-xs text-zinc-400">
+                                <CalendarDays className="h-3.5 w-3.5" />
+                                {formatDate(nextPayment.due_date)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-xs text-zinc-400">Sem vencimentos futuros</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4">
+                          <StatusSelect
+                            contract={contract}
+                            busy={updatingStatus === contract.id}
+                            onChange={(nextStatus) => handleStatusChange(contract, nextStatus)}
+                          />
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownload(contract)}
+                              disabled={downloadingPdf === contract.id}
+                              aria-label={`Baixar PDF de ${contract.title}`}
+                              className="text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                            >
+                              {downloadingPdf === contract.id
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : <Download className="h-4 w-4" />}
+                              <span className="ml-2">PDF</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openContract(contract)}
+                              aria-label={`Editar ${contract.title}`}
+                              className="text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                            >
+                              Editar
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="divide-y divide-zinc-800 md:hidden">
+              {filteredContracts.map((contract) => {
+                const nextPayment = getNextScheduledPayment(contract);
+                return (
+                  <article key={contract.id} className="space-y-4 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <button type="button" onClick={() => openContract(contract)} className="min-w-0 text-left">
+                        <span className="block font-medium text-white">{contract.title}</span>
+                        <span className="mt-1 block truncate text-sm text-zinc-400">{contract.client_snapshot.name}</span>
+                      </button>
+                      <span className="shrink-0 text-right font-medium tabular-nums text-zinc-200">
+                        {formatCurrency(contract.total_amount_cents)}
+                        <span className="mt-1 block text-[11px] font-normal text-zinc-400">valor total</span>
+                      </span>
+                    </div>
+                    <p className="text-sm text-zinc-300">{getContractServiceLabel(contract)}</p>
+                    <div className="flex flex-wrap items-end justify-between gap-3">
+                      <div className="min-w-0">
+                        <span className="block text-xs text-zinc-400">Próximo vencimento previsto</span>
+                        {nextPayment ? (
+                          <span className="mt-1 block text-sm tabular-nums text-zinc-200">
+                            {formatCurrency(nextPayment.amount_cents)} · {formatDate(nextPayment.due_date)}
+                          </span>
+                        ) : (
+                          <span className="mt-1 block text-sm text-zinc-400">Sem vencimentos futuros</span>
+                        )}
+                      </div>
+                      <StatusSelect
+                        contract={contract}
+                        busy={updatingStatus === contract.id}
+                        onChange={(nextStatus) => handleStatusChange(contract, nextStatus)}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-1 border-t border-zinc-800 pt-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownload(contract)}
+                        disabled={downloadingPdf === contract.id}
+                        className="text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                      >
+                        {downloadingPdf === contract.id
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Download className="h-4 w-4" />}
+                        <span className="ml-2">Baixar PDF</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openContract(contract)}
+                        className="text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                      >
+                        Editar
+                      </Button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="border-t border-zinc-800 px-5 py-3 text-xs text-zinc-400">
+              Exibindo {filteredContracts.length} de {contracts.length} contratos
+            </div>
+          </div>
+        )}
+      </div>
+    </Layout>
+  );
+}

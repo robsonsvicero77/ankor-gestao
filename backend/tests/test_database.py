@@ -4,7 +4,12 @@ from datetime import date, datetime, timezone
 
 import pytest
 
-from backend.database import PostgresDatabase, _serialize_record, _where_clause
+from backend.database import (
+    PostgresDatabase,
+    _normalize_value,
+    _serialize_record,
+    _where_clause,
+)
 
 
 def test_where_clause_converts_uuid_timestamps_and_null_filters():
@@ -80,6 +85,25 @@ def test_clients_support_tenant_scoped_document_queries():
         ' WHERE "tenant_id" = $1',
         [tenant_id],
     )
+
+
+def test_contracts_support_tenant_client_dates_and_snapshots():
+    tenant_id = uuid.uuid4()
+    client_id = uuid.uuid4()
+
+    clause, values = _where_clause(
+        "contracts",
+        {"tenant_id": str(tenant_id), "client_id": str(client_id)},
+    )
+
+    assert clause == ' WHERE "tenant_id" = $1 AND "client_id" = $2'
+    assert values == [tenant_id, client_id]
+    assert _normalize_value("start_date", "2026-01-05") == date(2026, 1, 5)
+    assert _serialize_record({
+        "client_snapshot": '{"name":"Empresa Exemplo"}',
+    }) == {
+        "client_snapshot": {"name": "Empresa Exemplo"},
+    }
 
 
 def test_database_reads_and_mutations_require_filters():

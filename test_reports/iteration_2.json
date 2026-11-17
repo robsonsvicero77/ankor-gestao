@@ -1,5 +1,5 @@
 {
-  "summary": "Completed comprehensive testing of FinPredict SaaS iteration 2 features including onboarding flow, CSV import/export, ledger filters, and email reminders",
+  "summary": "Completed comprehensive testing of AnkorGestão SaaS iteration 2 features including onboarding flow, CSV import/export, ledger filters, and email reminders",
   "backend_issues": {
     "critical_bugs": [],
     "flaky_endpoints": []

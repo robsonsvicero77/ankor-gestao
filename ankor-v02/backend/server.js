@@ -17,7 +17,7 @@ function saveUsers(users) {
 	fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 let users = loadUsers();
-const JWT_SECRET = process.env.JWT_SECRET || 'finpredict-secret-key-2024';
+const JWT_SECRET = process.env.JWT_SECRET || 'AnkorGestão-secret-key-2024';
 const app = express();
 const PORT = process.env.PORT || 3001;
 

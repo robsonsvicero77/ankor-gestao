@@ -14,9 +14,11 @@ Hostinger.
    in the Supabase SQL Editor to enable proposal storage before using the page.
 4. Run [`db/migrations/003_create_clients.sql`](../db/migrations/003_create_clients.sql)
    in the Supabase SQL Editor to enable tenant-scoped client storage.
-5. Configure the project's Auth site URL as the Hostinger site URL. Add local
+5. Run [`db/migrations/004_create_contracts.sql`](../db/migrations/004_create_contracts.sql)
+   after migration 003 to enable tenant-scoped contracts linked to saved clients.
+6. Configure the project's Auth site URL as the Hostinger site URL. Add local
    development URLs to the allowed redirect URLs if needed.
-6. Copy the project URL and publishable/anon key from the Supabase API settings.
+7. Copy the project URL and publishable/anon key from the Supabase API settings.
    The frontend key is public by design; never expose the Postgres password.
 
 ## Vercel API
