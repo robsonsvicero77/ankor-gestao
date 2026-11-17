@@ -46,13 +46,21 @@ def test_create_proposal_uses_authenticated_tenant(monkeypatch):
         issue_date=date(2026, 1, 1),
         valid_until=date(2026, 1, 31),
         amount_cents=125000,
-        content={"sections": [{"title": "Apresentação", "body": "Texto"}]},
+        content={
+            "sections": [{"title": "Apresentação", "body": "Texto"}],
+            "provider": {
+                "display_name": "Estúdio Exemplo",
+                "email": "contato@example.com",
+            },
+        },
     )
 
     result = asyncio.run(server.create_proposal(data, {"tenant_id": tenant_id}))
 
     assert saved["tenant_id"] == tenant_id
     assert saved["content"]["sections"][0]["body"] == "Texto"
+    assert saved["content"]["provider"]["display_name"] == "Estúdio Exemplo"
+    assert result.content.provider.display_name == "Estúdio Exemplo"
     assert result.status == "RASCUNHO"
 
 

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
@@ -9,11 +9,14 @@ import os
 import logging
 import asyncio
 import re
+import hmac
+import html
 from pathlib import Path
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from typing import Any, List, Literal, Optional
 import uuid
 from datetime import date, datetime, timezone, timedelta
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import csv
 import io
 import resend
@@ -53,6 +56,7 @@ elif not CORS_ORIGINS:
 # Resend Configuration
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
 SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
@@ -77,10 +81,39 @@ class UserResponse(BaseModel):
     tenant_id: str
     created_at: str
     role: str
+    avatar_path: Optional[str] = None
+
+class ProviderSettings(BaseModel):
+    display_name: str = Field(default="", max_length=200)
+    legal_name: str = Field(default="", max_length=200)
+    document: str = Field(default="", max_length=30)
+    representative_name: str = Field(default="", max_length=200)
+    email: str = Field(default="", max_length=254)
+    phone: str = Field(default="", max_length=40)
+    address: str = Field(default="", max_length=500)
+
+class AlertPreferences(BaseModel):
+    client_email_reminders: bool = False
+    in_app_alerts: bool = True
+    owner_email_alerts: bool = True
+
+class SettingsUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    timezone: str = Field(min_length=1, max_length=80)
+    provider: ProviderSettings
+    alerts: AlertPreferences
+
+class AvatarUpdate(BaseModel):
+    avatar_path: Optional[str] = None
+
+class OpeningBalanceUpdate(BaseModel):
+    amount_cents: int = Field(ge=-100000000000, le=100000000000)
+    note: Optional[str] = Field(default="Saldo inicial", max_length=500)
 
 class ReceivableCreate(BaseModel):
     description: str
     client_name: str
+    client_id: Optional[str] = None
     amount_cents: int
     due_date: str  # ISO format date
     is_recurring: Optional[bool] = False
@@ -90,6 +123,7 @@ class ReceivableCreate(BaseModel):
 class ReceivableUpdate(BaseModel):
     description: Optional[str] = None
     client_name: Optional[str] = None
+    client_id: Optional[str] = None
     amount_cents: Optional[int] = None
     due_date: Optional[str] = None
     is_recurring: Optional[bool] = None
@@ -101,6 +135,7 @@ class ReceivableResponse(BaseModel):
     tenant_id: str
     description: str
     client_name: str
+    client_id: Optional[str] = None
     amount_cents: int
     due_date: str
     paid_at: Optional[str] = None
@@ -173,6 +208,7 @@ class ProposalSection(BaseModel):
 class ProposalContent(BaseModel):
     sections: List[ProposalSection] = Field(default_factory=list, max_length=30)
     city: Optional[str] = Field(default=None, max_length=120)
+    provider: Optional[ProviderSettings] = None
 
 
 class ProposalCreate(BaseModel):
@@ -693,6 +729,218 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     return UserResponse(**user)
 
+
+DEFAULT_ALERT_PREFERENCES = {
+    "client_email_reminders": False,
+    "in_app_alerts": True,
+    "owner_email_alerts": True,
+}
+
+
+def _settings_alert_preferences(tenant: dict) -> dict:
+    stored = tenant.get("alert_preferences") or {}
+    return {
+        key: bool(stored.get(key, default))
+        for key, default in DEFAULT_ALERT_PREFERENCES.items()
+    }
+
+
+def _provider_settings(tenant: dict) -> dict:
+    return {
+        "display_name": tenant.get("provider_display_name") or "",
+        "legal_name": tenant.get("provider_legal_name") or "",
+        "document": tenant.get("provider_document") or "",
+        "representative_name": tenant.get("provider_representative_name") or "",
+        "email": tenant.get("provider_email") or "",
+        "phone": tenant.get("provider_phone") or "",
+        "address": tenant.get("provider_address") or "",
+    }
+
+
+@api_router.get("/settings")
+async def get_settings(current_user: dict = Depends(get_current_user)):
+    tenant_id = current_user["tenant_id"]
+    user = await database.fetch_one(
+        "users", {"id": current_user["user_id"], "tenant_id": tenant_id}
+    )
+    tenant = await database.fetch_one("tenants", {"id": tenant_id})
+    if not user or not tenant:
+        raise HTTPException(status_code=404, detail="Configurações não encontradas")
+
+    initial_balance = await database.fetch_one(
+        "ledger_entries",
+        {"tenant_id": tenant_id, "entry_type": "SALDO_INICIAL"},
+    )
+    has_other_entries = await database.has_non_initial_ledger_entries(tenant_id)
+    return {
+        "name": user["name"],
+        "email": user["email"],
+        "avatar_path": user.get("avatar_path"),
+        "timezone": tenant.get("timezone") or "America/Sao_Paulo",
+        "currency": "BRL",
+        "provider": _provider_settings(tenant),
+        "provider_configured": bool(tenant.get("provider_configured")),
+        "alerts": _settings_alert_preferences(tenant),
+        "initial_balance_cents": (
+            (initial_balance["amount_cents"] if initial_balance["direction"] == "CREDIT"
+             else -initial_balance["amount_cents"])
+            if initial_balance else None
+        ),
+        "initial_balance_editable": not has_other_entries,
+    }
+
+
+@api_router.put("/settings")
+async def update_settings(
+    data: SettingsUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    tenant_id = current_user["tenant_id"]
+    user_id = current_user["user_id"]
+    name = data.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="O nome do perfil é obrigatório")
+    try:
+        ZoneInfo(data.timezone)
+    except ZoneInfoNotFoundError as exc:
+        raise HTTPException(status_code=422, detail="Fuso horário inválido") from exc
+
+    provider = data.provider.model_dump()
+    for key, value in provider.items():
+        provider[key] = value.strip()
+    if provider["email"] and not re.fullmatch(
+        r"[^@\s]+@[^@\s]+\.[^@\s]+", provider["email"]
+    ):
+        raise HTTPException(
+            status_code=422, detail="O e-mail profissional é inválido"
+        )
+
+    user = await database.update_one(
+        "users",
+        {"id": user_id, "tenant_id": tenant_id},
+        {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()},
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    tenant = await database.update_one(
+        "tenants",
+        {"id": tenant_id},
+        {
+            "timezone": data.timezone,
+            "provider_display_name": provider["display_name"],
+            "provider_legal_name": provider["legal_name"],
+            "provider_document": provider["document"],
+            "provider_representative_name": provider["representative_name"],
+            "provider_email": provider["email"],
+            "provider_phone": provider["phone"],
+            "provider_address": provider["address"],
+            "provider_configured": True,
+            "alert_preferences": data.alerts.model_dump(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+    return {"message": "Configurações salvas"}
+
+
+@api_router.put("/settings/avatar")
+async def update_avatar(
+    data: AvatarUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    expected_path = f"{current_user['user_id']}/avatar"
+    if data.avatar_path not in (None, expected_path):
+        raise HTTPException(status_code=422, detail="Caminho de avatar inválido")
+
+    user = await database.update_one(
+        "users",
+        {"id": current_user["user_id"], "tenant_id": current_user["tenant_id"]},
+        {
+            "avatar_path": data.avatar_path,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return {"avatar_path": user.get("avatar_path")}
+
+
+@api_router.put("/settings/opening-balance")
+async def update_opening_balance(
+    data: OpeningBalanceUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    entry = await database.update_initial_balance_if_ledger_empty(
+        current_user["tenant_id"],
+        data.amount_cents,
+        data.note.strip() if data.note and data.note.strip() else None,
+    )
+    if not entry:
+        raise HTTPException(
+            status_code=409,
+            detail="O saldo inicial não pode ser alterado após outros lançamentos",
+        )
+    return {
+        "amount_cents": (
+            entry["amount_cents"]
+            if entry["direction"] == "CREDIT"
+            else -entry["amount_cents"]
+        ),
+        "editable": True,
+    }
+
+
+@api_router.get("/alerts/upcoming")
+async def get_upcoming_alerts(current_user: dict = Depends(get_current_user)):
+    tenant_id = current_user["tenant_id"]
+    tenant = await database.fetch_one("tenants", {"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+
+    preferences = _settings_alert_preferences(tenant)
+    if not preferences["in_app_alerts"]:
+        return {"enabled": False, "items": []}
+
+    timezone_name = tenant.get("timezone") or "America/Sao_Paulo"
+    try:
+        local_today = datetime.now(ZoneInfo(timezone_name)).date()
+    except ZoneInfoNotFoundError as exc:
+        raise HTTPException(status_code=500, detail="Fuso horário inválido") from exc
+
+    alerts = []
+    for table, alert_type, noun in (
+        ("receivables", "receivable", "Receita"),
+        ("payables", "payable", "Despesa"),
+    ):
+        entries = await database.fetch_many(
+            table, {"tenant_id": tenant_id, "paid_at": None}, 1000,
+            order_by="due_date",
+        )
+        for entry in entries:
+            due = datetime.fromisoformat(entry["due_date"].replace("Z", "+00:00"))
+            if due.tzinfo is None:
+                due = due.replace(tzinfo=timezone.utc)
+            due_day = due.astimezone(ZoneInfo(timezone_name)).date()
+            days_remaining = (due_day - local_today).days
+            if days_remaining > 7:
+                continue
+            alerts.append({
+                "id": entry["id"],
+                "type": alert_type,
+                "label": noun,
+                "description": entry["description"],
+                "client_name": entry.get("client_name"),
+                "amount_cents": entry["amount_cents"],
+                "due_date": due_day.isoformat(),
+                "days_remaining": days_remaining,
+                "status": "overdue" if days_remaining < 0 else "upcoming",
+            })
+
+    alerts.sort(key=lambda alert: (alert["due_date"], alert["type"]))
+    return {"enabled": True, "items": alerts[:20]}
+
 # ==================== LEDGER HELPERS ====================
 
 async def create_ledger_entry(tenant_id: str, entry_type: str, direction: str, 
@@ -819,6 +1067,7 @@ async def generate_recurring_receivables(parent: dict, recurrence_type: str, end
             "tenant_id": parent["tenant_id"],
             "description": parent["description"],
             "client_name": parent["client_name"],
+            "client_id": parent.get("client_id"),
             "amount_cents": parent["amount_cents"],
             "due_date": next_date.isoformat(),
             "paid_at": None,
@@ -888,12 +1137,25 @@ async def list_receivables(
 async def create_receivable(data: ReceivableCreate, current_user: dict = Depends(get_current_user)):
     tenant_id = current_user["tenant_id"]
     now = datetime.now(timezone.utc).isoformat()
+    client_name = data.client_name.strip()
+    if data.client_id:
+        try:
+            uuid.UUID(data.client_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="Cliente inválido") from exc
+        client = await database.fetch_one(
+            "clients", {"id": data.client_id, "tenant_id": tenant_id}
+        )
+        if not client:
+            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        client_name = client.get("trade_name") or client["name"]
     
     receivable = {
         "id": str(uuid.uuid4()),
         "tenant_id": tenant_id,
         "description": data.description,
-        "client_name": data.client_name,
+        "client_name": client_name,
+        "client_id": data.client_id,
         "amount_cents": data.amount_cents,
         "due_date": data.due_date,
         "paid_at": None,
@@ -941,7 +1203,32 @@ async def update_receivable(
     if receivable.get("paid_at"):
         raise HTTPException(status_code=400, detail="Não é possível editar uma receita já paga")
     
-    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    supplied_data = data.model_dump(exclude_unset=True)
+    update_data = {
+        key: value
+        for key, value in supplied_data.items()
+        if value is not None or key == "client_id"
+    }
+    if "client_name" in update_data and "client_id" not in update_data:
+        update_data["client_id"] = None
+    if "client_id" in update_data and update_data["client_id"]:
+        try:
+            uuid.UUID(update_data["client_id"])
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="Cliente inválido") from exc
+        client = await database.fetch_one(
+            "clients",
+            {"id": update_data["client_id"], "tenant_id": tenant_id},
+        )
+        if not client:
+            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        update_data["client_name"] = client.get("trade_name") or client["name"]
+    elif "client_id" in update_data and "client_name" not in update_data:
+        update_data["client_name"] = receivable["client_name"]
+    if "client_name" in update_data and update_data["client_name"] is not None:
+        update_data["client_name"] = update_data["client_name"].strip()
+        if not update_data["client_name"]:
+            raise HTTPException(status_code=422, detail="Informe o nome do cliente")
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
     updated = await database.update_one(
@@ -1956,9 +2243,26 @@ async def send_payment_reminder(
     
     if receivable.get("paid_at"):
         raise HTTPException(status_code=400, detail="Receita já foi paga")
+
+    client_id = receivable.get("client_id")
+    client = (
+        await database.fetch_one(
+            "clients", {"id": client_id, "tenant_id": tenant_id}
+        )
+        if client_id else None
+    )
+    if not client or not client.get("email"):
+        raise HTTPException(
+            status_code=409,
+            detail="Vincule um cliente cadastrado com e-mail para enviar o lembrete",
+        )
     
     # Get user info for sender name
-    user = await database.fetch_one("users", {"id": current_user["user_id"]})
+    user = await database.fetch_one(
+        "users", {"id": current_user["user_id"], "tenant_id": tenant_id}
+    )
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
     # Format amount
     amount = receivable["amount_cents"] / 100
@@ -1969,19 +2273,22 @@ async def send_payment_reminder(
     due_date_formatted = due_date.strftime("%d/%m/%Y")
     
     # Build email HTML
-    custom_msg = request.custom_message or ""
+    custom_msg = html.escape(request.custom_message or "")
+    escaped_description = html.escape(receivable["description"])
+    escaped_client_name = html.escape(client.get("trade_name") or client["name"])
+    escaped_user_name = html.escape(user["name"])
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #10b981;">Lembrete de Pagamento</h2>
-        <p>Olá,</p>
+        <p>Olá, {escaped_client_name},</p>
         <p>Este é um lembrete referente ao pagamento pendente:</p>
         <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Descrição:</strong> {receivable['description']}</p>
+            <p><strong>Descrição:</strong> {escaped_description}</p>
             <p><strong>Valor:</strong> {amount_formatted}</p>
             <p><strong>Vencimento:</strong> {due_date_formatted}</p>
         </div>
         {f'<p>{custom_msg}</p>' if custom_msg else ''}
-        <p>Atenciosamente,<br>{user['name']}</p>
+        <p>Atenciosamente,<br>{escaped_user_name}</p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
         <p style="color: #6b7280; font-size: 12px;">
             Este email foi enviado via AnkorGestão
@@ -1993,7 +2300,7 @@ async def send_payment_reminder(
     if not RESEND_API_KEY:
         # Log for testing/development
         logger.info(f"[EMAIL MOCK] Reminder would be sent for receivable {receivable['id']}")
-        logger.info(f"[EMAIL MOCK] To: {receivable['client_name']}")
+        logger.info(f"[EMAIL MOCK] To: {client['email']}")
         logger.info(f"[EMAIL MOCK] Amount: {amount_formatted}, Due: {due_date_formatted}")
         
         # Record reminder sent (even in mock mode)
@@ -2003,7 +2310,7 @@ async def send_payment_reminder(
             "receivable_id": receivable["id"],
             "sent_at": datetime.now(timezone.utc).isoformat(),
             "status": "mock",
-            "client_name": receivable["client_name"]
+            "client_name": client.get("trade_name") or client["name"]
         })
         
         return EmailReminderResponse(
@@ -2016,7 +2323,7 @@ async def send_payment_reminder(
         # Send via Resend
         params = {
             "from": SENDER_EMAIL,
-            "to": [user["email"]],  # In production, this would be client email
+            "to": [client["email"]],
             "subject": f"Lembrete de Pagamento - {receivable['description']}",
             "html": html_content
         }
@@ -2031,7 +2338,7 @@ async def send_payment_reminder(
             "sent_at": datetime.now(timezone.utc).isoformat(),
             "status": "sent",
             "email_id": email_result.get("id"),
-            "client_name": receivable["client_name"]
+            "client_name": client.get("trade_name") or client["name"]
         })
         
         return EmailReminderResponse(
@@ -2079,102 +2386,221 @@ async def get_upcoming_reminders(current_user: dict = Depends(get_current_user))
 
 # ==================== DAILY JOB ENDPOINTS ====================
 
-async def send_automatic_reminder(receivable: dict, user: dict):
-    """Send automatic reminder for a receivable"""
+async def send_automatic_reminder(
+    receivable: dict,
+    user: dict,
+    client: dict,
+):
+    """Send an automatic reminder to the linked client."""
     amount = receivable["amount_cents"] / 100
     amount_formatted = f"R$ {amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    due_date = datetime.fromisoformat(receivable["due_date"].replace('Z', '+00:00'))
+    due_date = datetime.fromisoformat(receivable["due_date"].replace("Z", "+00:00"))
     due_date_formatted = due_date.strftime("%d/%m/%Y")
-    
+    client_name = client.get("trade_name") or client["name"]
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #10b981;">Lembrete Automático de Pagamento</h2>
-        <p>Olá,</p>
-        <p>Este é um lembrete automático sobre um pagamento próximo do vencimento:</p>
+        <h2 style="color: #0052cc;">Lembrete de pagamento</h2>
+        <p>Olá, {html.escape(client_name)},</p>
+        <p>Este é um lembrete sobre um pagamento próximo do vencimento:</p>
         <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p><strong>Descrição:</strong> {receivable['description']}</p>
-            <p><strong>Cliente:</strong> {receivable.get('client_name', 'N/A')}</p>
+            <p><strong>Descrição:</strong> {html.escape(receivable['description'])}</p>
             <p><strong>Valor:</strong> {amount_formatted}</p>
             <p><strong>Vencimento:</strong> {due_date_formatted}</p>
         </div>
-        <p>Atenciosamente,<br>{user['name']}</p>
+        <p>Atenciosamente,<br>{html.escape(user['name'])}</p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
         <p style="color: #6b7280; font-size: 12px;">
             Este email foi enviado automaticamente via AnkorGestão
         </p>
     </div>
     """
-    
+
     if not RESEND_API_KEY:
-        logger.info(f"[AUTO EMAIL MOCK] Reminder for receivable {receivable['id']} - {amount_formatted}")
+        logger.info(
+            "[AUTO EMAIL MOCK] Reminder for receivable %s to %s",
+            receivable["id"],
+            client["email"],
+        )
         return {"status": "mock", "receivable_id": receivable["id"]}
-    
+
     try:
         params = {
             "from": SENDER_EMAIL,
-            "to": [user["email"]],
+            "to": [client["email"]],
             "subject": f"Lembrete: {receivable['description']} - Vence em breve",
-            "html": html_content
+            "html": html_content,
         }
         result = await asyncio.to_thread(resend.Emails.send, params)
-        return {"status": "sent", "email_id": result.get("id"), "receivable_id": receivable["id"]}
-    except Exception as e:
-        logger.error(f"Failed to send auto reminder: {str(e)}")
-        return {"status": "error", "error": str(e), "receivable_id": receivable["id"]}
+        return {
+            "status": "sent",
+            "email_id": result.get("id"),
+            "receivable_id": receivable["id"],
+        }
+    except Exception as exc:
+        logger.error("Failed to send automatic reminder: %s", exc)
+        return {
+            "status": "error",
+            "error": str(exc),
+            "receivable_id": receivable["id"],
+        }
 
-@api_router.post("/jobs/send-reminders", response_model=JobStatusResponse)
-async def run_reminder_job(current_user: dict = Depends(get_current_user)):
-    """Manually trigger the daily reminder job for the current user"""
-    tenant_id = current_user["tenant_id"]
-    user_id = current_user["user_id"]
-    
-    user = await database.fetch_one("users", {"id": user_id, "tenant_id": tenant_id})
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    
-    now = datetime.now(timezone.utc)
-    three_days = now + timedelta(days=3)
-    
-    # Find receivables due in next 3 days that haven't been reminded recently
-    receivables = await database.fetch_many(
-        "receivables", {"tenant_id": tenant_id, "paid_at": None}, 1000,
-        order_by="due_date",
+
+async def _send_owner_due_alerts(user: dict, tenant: dict, now: datetime):
+    preferences = _settings_alert_preferences(tenant)
+    if not preferences["owner_email_alerts"] or not user.get("email"):
+        return None
+
+    previous_job = await database.fetch_one(
+        "job_status",
+        {"tenant_id": tenant["id"], "job_name": "daily_reminders"},
     )
-    
-    sent_count = 0
+    if previous_job and previous_job.get("last_run"):
+        previous_run = datetime.fromisoformat(
+            previous_job["last_run"].replace("Z", "+00:00")
+        )
+        if now - previous_run < timedelta(hours=24):
+            return None
+
+    timezone_name = tenant.get("timezone") or "America/Sao_Paulo"
+    local_today = now.astimezone(ZoneInfo(timezone_name)).date()
+    due_items = []
+    for table, noun in (("receivables", "Receita"), ("payables", "Despesa")):
+        entries = await database.fetch_many(
+            table, {"tenant_id": tenant["id"], "paid_at": None}, 1000,
+            order_by="due_date",
+        )
+        for entry in entries:
+            due = datetime.fromisoformat(entry["due_date"].replace("Z", "+00:00"))
+            if due.tzinfo is None:
+                due = due.replace(tzinfo=timezone.utc)
+            due_day = due.astimezone(ZoneInfo(timezone_name)).date()
+            days_remaining = (due_day - local_today).days
+            if days_remaining <= 7:
+                due_items.append((due_day, noun, entry, days_remaining))
+
+    if not due_items:
+        return None
+
+    due_items.sort(key=lambda item: (item[0], item[1]))
+    rows = []
+    for due_day, noun, entry, days_remaining in due_items[:10]:
+        amount = entry["amount_cents"] / 100
+        amount_formatted = f"R$ {amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        timing = (
+            f"atrasada há {abs(days_remaining)} dia(s)"
+            if days_remaining < 0
+            else "vence hoje"
+            if days_remaining == 0
+            else f"vence em {days_remaining} dia(s)"
+        )
+        rows.append(
+            "<li>"
+            f"<strong>{html.escape(noun)}:</strong> "
+            f"{html.escape(entry['description'])} — {amount_formatted}, "
+            f"{due_day.strftime('%d/%m/%Y')} ({timing})"
+            "</li>"
+        )
+
+    html_content = (
+        "<div style='font-family:Arial,sans-serif;max-width:640px;margin:auto'>"
+        "<h2>Resumo financeiro do AnkorGestão</h2>"
+        "<p>Há lançamentos próximos do vencimento ou em atraso:</p>"
+        f"<ul>{''.join(rows)}</ul></div>"
+    )
+    if not RESEND_API_KEY:
+        logger.info("[OWNER EMAIL MOCK] Due alerts for tenant %s", tenant["id"])
+        return {"status": "mock", "type": "owner_alert"}
+
+    try:
+        result = await asyncio.to_thread(
+            resend.Emails.send,
+            {
+                "from": SENDER_EMAIL,
+                "to": [user["email"]],
+                "subject": "Resumo de vencimentos - AnkorGestão",
+                "html": html_content,
+            },
+        )
+        return {
+            "status": "sent",
+            "type": "owner_alert",
+            "email_id": result.get("id"),
+        }
+    except Exception as exc:
+        logger.error("Failed to send owner due alerts: %s", exc)
+        return {"status": "error", "type": "owner_alert", "error": str(exc)}
+
+
+async def _run_reminder_job(tenant: dict, user: dict, now: datetime):
+    tenant_id = tenant["id"]
+    preferences = _settings_alert_preferences(tenant)
+    timezone_name = tenant.get("timezone") or "America/Sao_Paulo"
+    local_today = now.astimezone(ZoneInfo(timezone_name)).date()
     results = []
-    
-    for r in receivables:
-        due = datetime.fromisoformat(r["due_date"].replace('Z', '+00:00'))
-        if now.date() <= due.date() <= three_days.date():
-            # Check if reminder was sent in last 24 hours
+    sent_count = 0
+
+    if preferences["client_email_reminders"]:
+        receivables = await database.fetch_many(
+            "receivables", {"tenant_id": tenant_id, "paid_at": None}, 1000,
+            order_by="due_date",
+        )
+        for receivable in receivables:
+            due = datetime.fromisoformat(receivable["due_date"].replace("Z", "+00:00"))
+            if due.tzinfo is None:
+                due = due.replace(tzinfo=timezone.utc)
+            days_remaining = (
+                due.astimezone(ZoneInfo(timezone_name)).date() - local_today
+            ).days
+            if not 0 <= days_remaining <= 3:
+                continue
+
+            client_id = receivable.get("client_id")
+            client = (
+                await database.fetch_one(
+                    "clients", {"id": client_id, "tenant_id": tenant_id}
+                )
+                if client_id else None
+            )
+            if not client or not client.get("email"):
+                results.append({
+                    "status": "skipped",
+                    "reason": "cliente_sem_email",
+                    "receivable_id": receivable["id"],
+                })
+                continue
+
             recent_reminder = await database.fetch_one(
                 "reminders",
                 {
                     "tenant_id": tenant_id,
-                    "receivable_id": r["id"],
+                    "receivable_id": receivable["id"],
                     "sent_at": {"$gte": (now - timedelta(hours=24)).isoformat()},
                 },
             )
-            
-            if not recent_reminder:
-                result = await send_automatic_reminder(r, user)
-                results.append(result)
-                
-                # Record reminder
+            if recent_reminder:
+                continue
+
+            result = await send_automatic_reminder(receivable, user, client)
+            results.append(result)
+            if result["status"] in {"sent", "mock"}:
                 await database.insert("reminders", {
                     "id": str(uuid.uuid4()),
                     "tenant_id": tenant_id,
-                    "receivable_id": r["id"],
+                    "receivable_id": receivable["id"],
                     "sent_at": now.isoformat(),
                     "status": result["status"],
-                    "auto": True
+                    "auto": True,
+                    "client_name": client.get("trade_name") or client["name"],
+                    "email_id": result.get("email_id"),
                 })
-                
-                if result["status"] in ["sent", "mock"]:
-                    sent_count += 1
-    
-    # Update job status
+                sent_count += 1
+
+    owner_result = await _send_owner_due_alerts(user, tenant, now)
+    if owner_result:
+        results.append(owner_result)
+        if owner_result["status"] in {"sent", "mock"}:
+            sent_count += 1
+
     await database.upsert_job_status({
         "tenant_id": tenant_id,
         "job_name": "daily_reminders",
@@ -2182,13 +2608,58 @@ async def run_reminder_job(current_user: dict = Depends(get_current_user)):
         "sent_count": sent_count,
         "results": results,
     })
-    
+    return sent_count, results
+
+
+@api_router.post("/jobs/send-reminders", response_model=JobStatusResponse)
+async def run_reminder_job(current_user: dict = Depends(get_current_user)):
+    """Manually trigger the daily reminder job for the current user."""
+    tenant_id = current_user["tenant_id"]
+    user = await database.fetch_one(
+        "users", {"id": current_user["user_id"], "tenant_id": tenant_id}
+    )
+    tenant = await database.fetch_one("tenants", {"id": tenant_id})
+    if not user or not tenant:
+        raise HTTPException(status_code=404, detail="Usuário ou empresa não encontrado")
+
+    now = datetime.now(timezone.utc)
+    sent_count, _ = await _run_reminder_job(tenant, user, now)
     return JobStatusResponse(
         job_name="daily_reminders",
         last_run=now.isoformat(),
         status="completed",
-        message=f"{sent_count} lembretes enviados para receitas vencendo nos próximos 3 dias"
+        message=f"{sent_count} alertas por e-mail processados",
     )
+
+
+@api_router.get("/cron/due-alerts")
+async def run_due_alerts_cron(authorization: Optional[str] = Header(default=None)):
+    if not CRON_SECRET:
+        raise HTTPException(status_code=503, detail="CRON_SECRET não configurado")
+    if not hmac.compare_digest(authorization or "", f"Bearer {CRON_SECRET}"):
+        raise HTTPException(status_code=401, detail="Não autorizado")
+
+    tenants = await database.fetch_all_tenants()
+    now = datetime.now(timezone.utc)
+    processed = 0
+    failures = 0
+    for tenant in tenants:
+        user = await database.fetch_one(
+            "users",
+            {"id": tenant["owner_user_id"], "tenant_id": tenant["id"]},
+        )
+        if not user:
+            failures += 1
+            logger.error("Daily reminder owner missing for tenant %s", tenant["id"])
+            continue
+        try:
+            await _run_reminder_job(tenant, user, now)
+            processed += 1
+        except Exception:
+            failures += 1
+            logger.exception("Daily reminder job failed for tenant %s", tenant["id"])
+
+    return {"processed_tenants": processed, "failed_tenants": failures}
 
 @api_router.get("/jobs/status")
 async def get_job_status(current_user: dict = Depends(get_current_user)):

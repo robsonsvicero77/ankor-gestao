@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
+import { supabase } from '../lib/supabase';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -38,6 +39,29 @@ export function Layout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [avatarUrl, setAvatarUrl] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+    setAvatarUrl('');
+    if (!user?.avatar_path) return () => { active = false; };
+
+    supabase.storage
+      .from('avatars')
+      .createSignedUrl(user.avatar_path, 3600)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error loading profile avatar:', error);
+          return;
+        }
+        if (active) setAvatarUrl(data.signedUrl);
+      })
+      .catch((error) => {
+        console.error('Error loading profile avatar:', error);
+      });
+
+    return () => { active = false; };
+  }, [user?.avatar_path]);
 
   return (
     <div className="min-h-screen bg-[#09090b]">
@@ -78,10 +102,14 @@ export function Layout({ children }) {
           {/* User info */}
           <div className="border-t border-zinc-800 p-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="h-9 w-9 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                <span className="text-emerald-500 font-medium text-sm">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </span>
+              <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-emerald-500/20 flex items-center justify-center">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-emerald-500 font-medium text-sm">
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{user?.name}</p>

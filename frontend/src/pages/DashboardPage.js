@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { dashboardApi, receivablesApi, payablesApi } from '../lib/api';
+import { alertsApi, dashboardApi, receivablesApi, payablesApi } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { 
@@ -17,7 +17,8 @@ import {
   Loader2,
   Calendar,
   Clock,
-  LineChart as LineChartIcon
+  LineChart as LineChartIcon,
+  BellRing
 } from 'lucide-react';
 import { 
   formatCurrency, 
@@ -44,6 +45,9 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [markingPaid, setMarkingPaid] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const [alertsError, setAlertsError] = useState('');
 
   const fetchDashboard = async () => {
     try {
@@ -55,6 +59,16 @@ export function DashboardPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+
+    try {
+      const response = await alertsApi.upcoming();
+      setAlerts(response.data.items || []);
+      setAlertsEnabled(Boolean(response.data.enabled));
+      setAlertsError('');
+    } catch (alertError) {
+      setAlertsError('Não foi possível carregar os alertas de vencimento.');
+      console.error('Erro ao carregar alertas do Dashboard:', alertError);
     }
   };
 
@@ -220,6 +234,55 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {alertsError && (
+          <p role="alert" className="text-sm text-amber-200">{alertsError}</p>
+        )}
+
+        {alertsEnabled && (
+          <Card className="bg-[#18181b] border-zinc-800">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg text-white">
+                <BellRing className="h-5 w-5 text-amber-300" />
+                Alertas de vencimento
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {alerts.length === 0 ? (
+                <p className="py-4 text-sm text-zinc-300">Nenhuma receita ou despesa vencida ou próxima do vencimento.</p>
+              ) : (
+                <div className="divide-y divide-zinc-800">
+                  {alerts.map((item) => (
+                    <button
+                      key={`${item.type}-${item.id}`}
+                      type="button"
+                      onClick={() => navigate(item.type === 'receivable' ? '/receivables' : '/payables')}
+                      className="flex w-full items-center justify-between gap-4 py-3 text-left transition-colors hover:bg-zinc-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-white">{item.description}</span>
+                        <span className="mt-1 block text-xs text-zinc-300">
+                          {item.label}{item.client_name ? ` · ${item.client_name}` : ''}
+                          {' · '}
+                          {item.days_remaining < 0
+                            ? `Atrasado há ${Math.abs(item.days_remaining)} dia(s)`
+                            : item.days_remaining === 0
+                              ? 'Vence hoje'
+                              : `Vence em ${item.days_remaining} dia(s)`}
+                        </span>
+                      </span>
+                      <span className={`shrink-0 font-mono text-sm tabular-nums ${
+                        item.type === 'receivable' ? 'text-emerald-300' : 'text-rose-300'
+                      }`}>
+                        {formatCurrency(item.amount_cents)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Projection Chart */}
         {dashboard?.projection_chart && dashboard.projection_chart.length > 0 && (

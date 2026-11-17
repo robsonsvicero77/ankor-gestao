@@ -1,0 +1,68 @@
+{
+  "title": "Escolha a estrutura das Configurações",
+  "question": "Qual organização facilita revisar e atualizar seus dados? Todas mantêm a identidade escura com acentos verdes já usada no AnkorGestão.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Bancada de configurações",
+      "kicker": "THE ROLL",
+      "thesis": "Um trilho de seções mantém o contexto enquanto cada grupo é editado em uma área dedicada.",
+      "palette": ["#09090b", "#18181b", "#10b981", "#f4f4f5"],
+      "materials": ["superfícies zinc escuras", "realce emerald para ações e estados"],
+      "viewport": "No desktop, navegação de seções à esquerda, formulário central e resumo do perfil à direita; no celular, o trilho vira uma lista compacta acima do formulário.",
+      "risk": "O resumo lateral precisa ceder espaço em telas estreitas para o formulário continuar confortável.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 8,
+        "regions": [
+          {"label": "título e estado de salvamento", "x": 0, "y": 0, "w": 9, "h": 1},
+          {"label": "navegação das seções", "x": 0, "y": 1, "w": 3, "h": 7, "accent": true},
+          {"label": "formulário da seção ativa", "x": 3, "y": 1, "w": 6, "h": 7},
+          {"label": "resumo do perfil", "x": 9, "y": 0, "w": 3, "h": 5},
+          {"label": "ação salvar alterações", "x": 9, "y": 6, "w": 3, "h": 2, "accent": true}
+        ]
+      }
+    },
+    {
+      "id": "option-2",
+      "label": "Formulário contínuo",
+      "thesis": "Todos os ajustes ficam em uma folha única, percorrida por âncoras de seção.",
+      "palette": ["#09090b", "#18181b", "#10b981", "#f4f4f5"],
+      "materials": ["superfícies zinc escuras", "realce emerald para ações e estados"],
+      "viewport": "O cabeçalho abre uma coluna única de grupos — perfil, dados profissionais, finanças, alertas, segurança e saldo — com índice no topo e botão de salvar persistente.",
+      "risk": "A página fica longa; o índice e a indicação de alterações precisam manter a orientação.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          {"label": "título e estado de salvamento", "x": 0, "y": 0, "w": 12, "h": 1},
+          {"label": "índice horizontal de seções", "x": 0, "y": 1, "w": 12, "h": 1, "accent": true},
+          {"label": "grupos de configurações em coluna", "x": 1, "y": 2, "w": 10, "h": 7},
+          {"label": "ação salvar alterações", "x": 0, "y": 9, "w": 12, "h": 1, "accent": true}
+        ]
+      }
+    },
+    {
+      "id": "option-5",
+      "label": "Índice por áreas",
+      "thesis": "Uma visão geral mostra cada área e seu estado antes de abrir o formulário específico.",
+      "palette": ["#09090b", "#18181b", "#10b981", "#f4f4f5"],
+      "materials": ["superfícies zinc escuras", "realce emerald para ações e estados"],
+      "viewport": "A primeira tela apresenta áreas de configuração como linhas selecionáveis; ao abrir uma, o painel de detalhes toma o lugar do índice e oferece retorno claro.",
+      "risk": "O salto entre índice e edição acrescenta navegação para tarefas rápidas.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 8,
+        "regions": [
+          {"label": "título e estado de salvamento", "x": 0, "y": 0, "w": 12, "h": 1},
+          {"label": "índice de áreas", "x": 0, "y": 1, "w": 5, "h": 7, "accent": true},
+          {"label": "resumo e orientação", "x": 5, "y": 1, "w": 7, "h": 3},
+          {"label": "detalhe da área selecionada", "x": 5, "y": 4, "w": 7, "h": 4}
+        ]
+      }
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "code", "toggle": false},
+  "steer": true
+}

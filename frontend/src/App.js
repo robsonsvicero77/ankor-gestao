@@ -14,7 +14,7 @@ import { ContractEditorPage } from './pages/ContractEditorPage';
 import { ClientsPage } from './pages/ClientsPage';
 import { ClientEditorPage } from './pages/ClientEditorPage';
 import { LedgerPage } from './pages/LedgerPage';
-// import { SettingsPage } from './pages/SettingsPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { Loader2 } from 'lucide-react';
 import './App.css';
 
@@ -200,14 +200,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      {/* <Route
+      <Route
         path="/settings"
         element={
           <ProtectedRoute>
             <SettingsPage />
           </ProtectedRoute>
         }
-      /> */}
+      />
 
       {/* Default redirect */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

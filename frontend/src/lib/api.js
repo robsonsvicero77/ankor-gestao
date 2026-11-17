@@ -59,6 +59,18 @@ export const authApi = {
   getMe: () => api.get('/auth/me'),
 };
 
+// Settings and account preferences API
+export const settingsApi = {
+  get: () => api.get('/settings'),
+  update: (data) => api.put('/settings', data),
+  updateAvatar: (avatarPath) => api.put('/settings/avatar', { avatar_path: avatarPath }),
+  updateOpeningBalance: (data) => api.put('/settings/opening-balance', data),
+};
+
+export const alertsApi = {
+  upcoming: () => api.get('/alerts/upcoming'),
+};
+
 // Balance API
 export const balanceApi = {
   setInitial: (data) => api.post('/balance/initial', data),
@@ -154,6 +166,7 @@ export const remindersApi = {
     custom_message: customMessage 
   }),
   getUpcoming: () => api.get('/reminders/upcoming'),
+  runJob: () => api.post('/jobs/send-reminders'),
 };
 
 // Onboarding API

@@ -11,6 +11,12 @@ test('proposal PDF definition includes client, dates, investment and section tex
     amount_cents: 750000,
     content: {
       city: 'São Paulo',
+      provider: {
+        display_name: 'Estúdio Exemplo',
+        legal_name: 'Estúdio Exemplo Ltda.',
+        document: '12.345.678/0001-90',
+        email: 'contato@example.com',
+      },
       sections: [
         { title: 'Objetivos', body: 'Aumentar alcance\n• Melhorar conversão' },
         { title: 'Investimento', body: '' },
@@ -18,6 +24,7 @@ test('proposal PDF definition includes client, dates, investment and section tex
     },
   }, logoDataUrl);
   const serialized = JSON.stringify(definition);
+  const footer = JSON.stringify(definition.footer(1, 1));
 
   expect(serialized).toContain('Cliente Exemplo');
   expect(serialized).toContain('01/03/2026');
@@ -25,6 +32,8 @@ test('proposal PDF definition includes client, dates, investment and section tex
   expect(serialized).toContain('Aumentar alcance');
   expect(serialized).toContain('Melhorar conversão');
   expect(serialized).toContain('São Paulo');
+  expect(footer).toContain('Estúdio Exemplo Ltda.');
+  expect(footer).toContain('contato@example.com');
   expect(definition.header.columns[0].image).toBe(logoDataUrl);
   expect(serialized).toContain('#0052CC');
   expect(serialized).not.toContain('#047857');

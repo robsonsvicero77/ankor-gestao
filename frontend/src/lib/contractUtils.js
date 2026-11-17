@@ -25,6 +25,13 @@ export const DEFAULT_PROVIDER = {
   representative_name: 'Roberto Robson Svicero',
 };
 
+export function getProviderDefaults(settings = {}, configured = false) {
+  if (!configured) return { ...DEFAULT_PROVIDER };
+  return Object.fromEntries(
+    Object.keys(DEFAULT_PROVIDER).map((key) => [key, settings[key] || '']),
+  );
+}
+
 export function parseAmount(value) {
   const normalized = String(value).trim().replace(/\s/g, '');
   const decimalValue = normalized.includes(',')

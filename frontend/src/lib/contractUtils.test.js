@@ -3,6 +3,8 @@ import {
   getNextScheduledPayment,
   getClientAddress,
   getContractServiceLabel,
+  getProviderDefaults,
+  DEFAULT_PROVIDER,
 } from './contractUtils';
 
 test('parses Brazilian and decimal currency input into cents', () => {
@@ -43,4 +45,21 @@ test('formats client address and service label from stored snapshots', () => {
       custom_service: 'Pesquisa com usuários',
     },
   })).toBe('UX Design, Pesquisa com usuários');
+});
+
+test('uses saved provider details while preserving intentional empty values', () => {
+  expect(getProviderDefaults({ display_name: 'Estúdio' }, false)).toEqual(DEFAULT_PROVIDER);
+  expect(getProviderDefaults({
+    display_name: 'Estúdio',
+    email: '',
+  }, true)).toEqual({
+    ...DEFAULT_PROVIDER,
+    display_name: 'Estúdio',
+    email: '',
+    legal_name: '',
+    document: '',
+    representative_name: '',
+    phone: '',
+    address: '',
+  });
 });

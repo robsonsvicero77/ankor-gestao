@@ -10,11 +10,16 @@ import asyncpg
 TABLE_COLUMNS = {
     "users": {
         "id", "email", "name", "tenant_id", "created_at", "updated_at",
-        "last_login_at", "role",
+        "last_login_at", "role", "avatar_path",
     },
-    "tenants": {"id", "owner_user_id", "name", "timezone", "created_at"},
+    "tenants": {
+        "id", "owner_user_id", "name", "timezone", "created_at", "updated_at",
+        "provider_display_name", "provider_legal_name", "provider_document",
+        "provider_representative_name", "provider_email", "provider_phone",
+        "provider_address", "provider_configured", "alert_preferences",
+    },
     "receivables": {
-        "id", "tenant_id", "description", "client_name", "amount_cents",
+        "id", "tenant_id", "description", "client_name", "client_id", "amount_cents",
         "due_date", "paid_at", "is_recurring", "recurrence_type",
         "recurrence_end_date", "parent_id", "created_at", "updated_at",
     },
@@ -61,7 +66,7 @@ TIMESTAMP_COLUMNS = {
     "created_at", "updated_at", "last_login_at", "due_date", "paid_at",
     "recurrence_end_date", "occurred_at", "sent_at", "last_run",
 }
-JSON_COLUMNS = {"results", "content", "client_snapshot"}
+JSON_COLUMNS = {"results", "content", "client_snapshot", "alert_preferences"}
 FILTER_OPERATORS = {"$gte": ">=", "$lte": "<=", "$gt": ">", "$lt": "<"}
 
 
@@ -195,6 +200,13 @@ class PostgresDatabase:
         )
         return [_serialize_record(record) for record in records]
 
+    async def fetch_all_tenants(self, limit: int = 1000) -> list[dict]:
+        records = await self._require_pool().fetch(
+            'SELECT * FROM "tenants" ORDER BY "created_at" LIMIT $1',
+            limit,
+        )
+        return [_serialize_record(record) for record in records]
+
     async def insert(self, table: str, values: Mapping[str, Any]) -> dict:
         _validate_table(table)
         columns = list(values)
@@ -264,6 +276,74 @@ class PostgresDatabase:
             f'ON CONFLICT ("tenant_id", "job_name") DO UPDATE SET {updates}',
             *parameters,
         )
+
+    async def has_non_initial_ledger_entries(self, tenant_id: str) -> bool:
+        return await self._require_pool().fetchval(
+            'SELECT EXISTS (SELECT 1 FROM "ledger_entries" '
+            'WHERE tenant_id = $1 AND entry_type <> $2)',
+            _normalize_value("tenant_id", tenant_id),
+            "SALDO_INICIAL",
+        )
+
+    async def update_initial_balance_if_ledger_empty(
+        self,
+        tenant_id: str,
+        amount_cents: int,
+        note: Optional[str],
+    ) -> Optional[dict]:
+        pool = self._require_pool()
+        tenant_uuid = _normalize_value("tenant_id", tenant_id)
+        direction = "CREDIT" if amount_cents >= 0 else "DEBIT"
+        absolute_amount = abs(amount_cents)
+
+        async with pool.acquire() as connection:
+            async with connection.transaction():
+                await connection.execute(
+                    'LOCK TABLE "ledger_entries" IN SHARE ROW EXCLUSIVE MODE'
+                )
+                has_other_entries = await connection.fetchval(
+                    'SELECT EXISTS (SELECT 1 FROM "ledger_entries" '
+                    'WHERE tenant_id = $1 AND entry_type <> $2)',
+                    tenant_uuid,
+                    "SALDO_INICIAL",
+                )
+                if has_other_entries:
+                    return None
+
+                existing = await connection.fetchrow(
+                    'SELECT id FROM "ledger_entries" '
+                    'WHERE tenant_id = $1 AND entry_type = $2 LIMIT 1',
+                    tenant_uuid,
+                    "SALDO_INICIAL",
+                )
+                if existing:
+                    record = await connection.fetchrow(
+                        'UPDATE "ledger_entries" '
+                        'SET direction = $1, amount_cents = $2, note = $3 '
+                        'WHERE id = $4 AND tenant_id = $5 RETURNING *',
+                        direction,
+                        absolute_amount,
+                        note,
+                        existing["id"],
+                        tenant_uuid,
+                    )
+                else:
+                    now = datetime.now(timezone.utc)
+                    record = await connection.fetchrow(
+                        'INSERT INTO "ledger_entries" '
+                        '(id, tenant_id, entry_type, direction, amount_cents, '
+                        'occurred_at, note, created_at) '
+                        'VALUES ($1, $2, $3, $4, $5, $6, $7, $6) RETURNING *',
+                        uuid.uuid4(),
+                        tenant_uuid,
+                        "SALDO_INICIAL",
+                        direction,
+                        absolute_amount,
+                        now,
+                        note,
+                    )
+
+        return _serialize_record(record)
 
     async def mark_paid(
         self,

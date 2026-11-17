@@ -6,9 +6,10 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import { proposalsApi } from '../lib/api';
+import { proposalsApi, settingsApi } from '../lib/api';
 import { downloadProposalPdf } from '../lib/proposalPdf';
 import { PROPOSAL_STATUSES } from './ProposalsPage';
+import { DEFAULT_PROVIDER, getProviderDefaults } from '../lib/contractUtils';
 
 const DEFAULT_SECTION_TITLES = [
   'Apresentação',
@@ -72,32 +73,54 @@ export function ProposalEditorPage() {
   const navigate = useNavigate();
   const isEditing = Boolean(proposalId);
   const [form, setForm] = useState(initialForm);
-  const [loading, setLoading] = useState(isEditing);
+  const [provider, setProvider] = useState({ ...DEFAULT_PROVIDER });
+  const [settingsWarning, setSettingsWarning] = useState('');
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState('');
 
   const loadProposal = useCallback(async () => {
-    if (!proposalId) return;
     setLoading(true);
     setError('');
+    setSettingsWarning('');
     try {
-      const response = await proposalsApi.get(proposalId);
-      const proposal = response.data;
-      const sections = proposal.content?.sections?.length
-        ? proposal.content.sections
-        : DEFAULT_SECTION_TITLES.map((title) => ({ title, body: '' }));
-      setForm({
-        title: proposal.title,
-        client_name: proposal.client_name,
-        contact_name: proposal.contact_name || '',
-        issue_date: proposal.issue_date.slice(0, 10),
-        valid_until: proposal.valid_until.slice(0, 10),
-        amount: (proposal.amount_cents / 100).toFixed(2),
-        status: proposal.status,
-        city: proposal.content?.city || '',
-        sections: sections.map((section) => createSection(section.title, section.body || '')),
-      });
+      let proposal = null;
+      if (proposalId) {
+        const response = await proposalsApi.get(proposalId);
+        proposal = response.data;
+      }
+
+      let providerDefaults = { ...DEFAULT_PROVIDER };
+      try {
+        const settingsResponse = await settingsApi.get();
+        providerDefaults = getProviderDefaults(
+          settingsResponse.data.provider,
+          settingsResponse.data.provider_configured,
+        );
+      } catch (settingsError) {
+        setSettingsWarning(
+          getErrorMessage(settingsError, 'Não foi possível carregar os dados profissionais salvos.'),
+        );
+      }
+
+      if (proposal) {
+        const sections = proposal.content?.sections?.length
+          ? proposal.content.sections
+          : DEFAULT_SECTION_TITLES.map((title) => ({ title, body: '' }));
+        setForm({
+          title: proposal.title,
+          client_name: proposal.client_name,
+          contact_name: proposal.contact_name || '',
+          issue_date: proposal.issue_date.slice(0, 10),
+          valid_until: proposal.valid_until.slice(0, 10),
+          amount: (proposal.amount_cents / 100).toFixed(2),
+          status: proposal.status,
+          city: proposal.content?.city || '',
+          sections: sections.map((section) => createSection(section.title, section.body || '')),
+        });
+      }
+      setProvider(proposal?.content?.provider || providerDefaults);
     } catch (loadError) {
       setError(getErrorMessage(loadError, 'Não foi possível carregar esta proposta.'));
     } finally {
@@ -168,6 +191,7 @@ export function ProposalEditorPage() {
         status: form.status,
         content: {
           city: form.city.trim() || null,
+          provider,
           sections: form.sections.map((section) => ({
             title: section.title.trim(),
             body: section.body,
@@ -206,6 +230,7 @@ export function ProposalEditorPage() {
         amount_cents: Math.round(amount * 100),
         content: {
           city: form.city.trim() || null,
+          provider,
           sections: form.sections.map((section) => ({
             title: section.title.trim(),
             body: section.body,
@@ -268,6 +293,11 @@ export function ProposalEditorPage() {
         {error && (
           <div role="alert" className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
             {error}
+          </div>
+        )}
+        {settingsWarning && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" role="status">
+            {settingsWarning} O PDF usará os dados padrão atuais; revise-os em Configurações.
           </div>
         )}
 

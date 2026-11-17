@@ -12,7 +12,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import { clientsApi, contractsApi } from '../lib/api';
+import { clientsApi, contractsApi, settingsApi } from '../lib/api';
 import { downloadContractPdf } from '../lib/contractPdf';
 import {
   amountToCents,
@@ -23,6 +23,7 @@ import {
   formatCurrency,
   getClientAddress,
   getClientSnapshot,
+  getProviderDefaults,
 } from '../lib/contractUtils';
 
 const DEFAULT_CLAUSES = [
@@ -156,7 +157,11 @@ function toFormValues(contract) {
     timeline_notes: content.timeline_notes || '',
     client_representative: content.client_representative || '',
     contract_city: content.contract_city || '',
-    provider: { ...DEFAULT_PROVIDER, ...(content.provider || {}) },
+    provider: content.provider
+      ? Object.fromEntries(
+        Object.keys(DEFAULT_PROVIDER).map((key) => [key, content.provider[key] || '']),
+      )
+      : { ...DEFAULT_PROVIDER },
     payment_schedule: (content.payment_schedule || []).map((payment) => createRow({
       ...payment,
       amount: (payment.amount_cents / 100).toFixed(2),
@@ -195,6 +200,7 @@ export function ContractEditorPage() {
   const [clientSnapshot, setClientSnapshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [providerWarning, setProviderWarning] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState('');
@@ -202,6 +208,7 @@ export function ContractEditorPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     setLoadError('');
+    setProviderWarning('');
     setError('');
     try {
       const [clientsResponse, contractResponse] = await Promise.all([
@@ -213,6 +220,20 @@ export function ContractEditorPage() {
         const contract = contractResponse.data;
         setForm(toFormValues(contract));
         setClientSnapshot(contract.client_snapshot);
+      } else {
+        try {
+          const settingsResponse = await settingsApi.get();
+          setForm((current) => ({
+            ...current,
+            provider: getProviderDefaults(
+              settingsResponse.data.provider,
+              settingsResponse.data.provider_configured,
+            ),
+          }));
+        } catch (settingsError) {
+          console.error('Não foi possível carregar os dados profissionais salvos:', settingsError);
+          setProviderWarning('Não foi possível carregar os dados profissionais de Configurações; serão usados os dados padrão.');
+        }
       }
     } catch (loadError) {
       setLoadError(getErrorMessage(loadError, 'Não foi possível carregar os dados do contrato.'));
@@ -457,6 +478,11 @@ export function ContractEditorPage() {
         {error && (
           <div role="alert" className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
             {error}
+          </div>
+        )}
+        {providerWarning && (
+          <div role="status" className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            {providerWarning}
           </div>
         )}
 

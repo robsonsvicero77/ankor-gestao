@@ -15,6 +15,12 @@ export function AuthProvider({ children }) {
     return response.data.needs_onboarding;
   };
 
+  const refreshUser = async () => {
+    const response = await authApi.getMe();
+    setUser(response.data);
+    return response.data;
+  };
+
   useEffect(() => {
     let active = true;
     let sessionVersion = 0;
@@ -116,6 +122,7 @@ export function AuthProvider({ children }) {
       needsOnboarding,
       completeOnboarding,
       checkOnboardingStatus,
+      refreshUser,
       isAuthenticated: !!user 
     }}>
       {children}

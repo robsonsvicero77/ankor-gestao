@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
-import { receivablesApi, remindersApi } from '../lib/api';
+import { clientsApi, receivablesApi, remindersApi } from '../lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -49,6 +49,7 @@ import {
 
 export function ReceivablesPage() {
   const [receivables, setReceivables] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,6 +69,7 @@ export function ReceivablesPage() {
   const [formData, setFormData] = useState({
     description: '',
     client_name: '',
+    client_id: '',
     amount: '',
     due_date: '',
     is_recurring: false,
@@ -78,8 +80,12 @@ export function ReceivablesPage() {
   const fetchReceivables = async () => {
     setLoading(true);
     try {
-      const response = await receivablesApi.list();
-      setReceivables(response.data);
+      const [receivablesResponse, clientsResponse] = await Promise.all([
+        receivablesApi.list(),
+        clientsApi.list(),
+      ]);
+      setReceivables(receivablesResponse.data);
+      setClients(clientsResponse.data);
     } catch (err) {
       console.error('Erro ao carregar receitas:', err);
     } finally {
@@ -104,6 +110,7 @@ export function ReceivablesPage() {
     setFormData({
       description: '',
       client_name: '',
+      client_id: '',
       amount: '',
       due_date: new Date().toISOString().split('T')[0],
       is_recurring: false,
@@ -118,6 +125,7 @@ export function ReceivablesPage() {
     setFormData({
       description: item.description,
       client_name: item.client_name,
+      client_id: item.client_id || '',
       amount: (item.amount_cents / 100).toFixed(2).replace('.', ','),
       due_date: item.due_date.split('T')[0],
       is_recurring: item.is_recurring || false,
@@ -135,6 +143,7 @@ export function ReceivablesPage() {
       const data = {
         description: formData.description,
         client_name: formData.client_name,
+        client_id: formData.client_id || null,
         amount_cents: parseCurrencyToCents(formData.amount),
         due_date: new Date(formData.due_date).toISOString(),
         is_recurring: formData.is_recurring,
@@ -355,8 +364,11 @@ export function ReceivablesPage() {
                             size="icon"
                             variant="ghost"
                             onClick={() => openReminderDialog(item)}
+                            disabled={!clients.find((client) => client.id === item.client_id)?.email}
                             className="h-8 w-8 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10"
-                            title="Enviar lembrete"
+                            title={clients.find((client) => client.id === item.client_id)?.email
+                              ? 'Enviar lembrete ao cliente'
+                              : 'Vincule um cliente cadastrado com e-mail'}
                             data-testid={`reminder-btn-${item.id}`}
                           >
                             <Mail className="h-4 w-4" />
@@ -433,16 +445,45 @@ export function ReceivablesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="client_name" className="text-zinc-300">Cliente</Label>
-                <Input
-                  id="client_name"
-                  placeholder="Nome do cliente"
-                  value={formData.client_name}
-                  onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                  required
-                  data-testid="receivable-client-input"
-                  className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500"
-                />
+                <Label htmlFor="receivable-client-select" className="text-zinc-300">Cliente</Label>
+                <select
+                  id="receivable-client-select"
+                  value={formData.client_id}
+                  onChange={(event) => {
+                    const selected = clients.find((client) => client.id === event.target.value);
+                    setFormData({
+                      ...formData,
+                      client_id: selected?.id || '',
+                      client_name: selected ? (selected.trade_name || selected.name) : '',
+                    });
+                  }}
+                  className="h-10 w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
+                  data-testid="receivable-client-select"
+                >
+                  <option value="">Informar nome manualmente (sem vínculo)</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.trade_name || client.name}{client.email ? ` · ${client.email}` : ' · sem e-mail'}
+                    </option>
+                  ))}
+                </select>
+                {formData.client_id ? (
+                  <p className="text-xs text-zinc-400">
+                    {clients.find((client) => client.id === formData.client_id)?.email
+                      ? `Lembretes serão enviados para ${clients.find((client) => client.id === formData.client_id).email}.`
+                      : 'Este cliente não tem e-mail cadastrado; lembretes por e-mail ficarão indisponíveis.'}
+                  </p>
+                ) : (
+                  <Input
+                    id="client_name"
+                    placeholder="Nome do cliente"
+                    value={formData.client_name}
+                    onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                    required
+                    data-testid="receivable-client-input"
+                    className="bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-500"
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="amount" className="text-zinc-300">Valor (R$)</Label>
@@ -613,6 +654,9 @@ export function ReceivablesPage() {
                   <p className="font-medium text-white">{reminderItem.description}</p>
                   <p className="text-sm text-zinc-500 mt-1">
                     Cliente: {reminderItem.client_name}
+                  </p>
+                  <p className="text-xs text-zinc-400">
+                    Destinatário: {clients.find((client) => client.id === reminderItem.client_id)?.email || 'e-mail indisponível'}
                   </p>
                   <p className="text-lg font-mono font-bold text-emerald-500 mt-2">
                     {formatCurrency(reminderItem.amount_cents)}

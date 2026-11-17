@@ -16,9 +16,12 @@ Hostinger.
    in the Supabase SQL Editor to enable tenant-scoped client storage.
 5. Run [`db/migrations/004_create_contracts.sql`](../db/migrations/004_create_contracts.sql)
    after migration 003 to enable tenant-scoped contracts linked to saved clients.
-6. Configure the project's Auth site URL as the Hostinger site URL. Add local
+6. Run [`db/migrations/005_create_persistent_settings.sql`](../db/migrations/005_create_persistent_settings.sql)
+   after migration 004 to enable persistent settings, private avatars, and
+   client-linked receivables.
+7. Configure the project's Auth site URL as the Hostinger site URL. Add local
    development URLs to the allowed redirect URLs if needed.
-7. Copy the project URL and publishable/anon key from the Supabase API settings.
+8. Copy the project URL and publishable/anon key from the Supabase API settings.
    The frontend key is public by design; never expose the Postgres password.
 
 ## Vercel API
@@ -34,6 +37,13 @@ Directory. Set these environment variables for every Vercel environment used:
   6543), with SSL enabled. It must use the database password, not an Auth key.
 - `CORS_ORIGINS`: comma-separated exact HTTPS origins for the Hostinger site
 - `RESEND_API_KEY` and `SENDER_EMAIL`: required only for email features
+- `CRON_SECRET`: a private random secret used to authorize the scheduled daily
+  due-alert job. Configure the same value as a Vercel environment variable.
+
+The daily Vercel Cron is declared in [`backend/vercel.json`](vercel.json) and
+runs at 09:00 in the São Paulo time zone. Client reminders go only to a linked
+client with an e-mail address; owner summaries go to the account e-mail.
+Automatic e-mail requires `RESEND_API_KEY`, `SENDER_EMAIL`, and `CRON_SECRET`.
 
 The API uses the database connection directly for SQL and enforces tenant scope
 in every data query. Do not put `DATABASE_URL` in the frontend or commit it.

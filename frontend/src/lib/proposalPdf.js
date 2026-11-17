@@ -84,6 +84,14 @@ function contentLines(body) {
 
 export function createProposalPdfDefinition(proposal, logoDataUrl) {
   const sections = proposal.content?.sections || [];
+  const provider = proposal.content?.provider || {};
+  const providerContact = [
+    provider.display_name,
+    provider.legal_name,
+    provider.document,
+    provider.email,
+    provider.phone,
+  ].filter(Boolean).join(' · ');
   const content = [
     { text: 'PROPOSTA COMERCIAL', style: 'eyebrow' },
     { text: proposal.title || 'Proposta', style: 'title' },
@@ -175,7 +183,14 @@ export function createProposalPdfDefinition(proposal, logoDataUrl) {
     footer: (currentPage, pageCount) => ({
       margin: [48, 0, 48, 22],
       columns: [
-        { text: `Proposta para ${proposal.client_name || 'cliente'}`, color: PDF_MUTED, fontSize: 8 },
+        {
+          text: [
+            `Proposta para ${proposal.client_name || 'cliente'}`,
+            providerContact,
+          ].filter(Boolean).join(' · '),
+          color: PDF_MUTED,
+          fontSize: 7,
+        },
         { text: `${currentPage} / ${pageCount}`, alignment: 'right', color: PDF_MUTED, fontSize: 8 },
       ],
     }),

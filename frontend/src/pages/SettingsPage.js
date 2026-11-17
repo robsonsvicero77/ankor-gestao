@@ -1,0 +1,803 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  BellRing,
+  Building2,
+  Check,
+  CircleAlert,
+  Clock3,
+  ImagePlus,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  Save,
+  UserRound,
+  Wallet,
+} from 'lucide-react';
+import { Layout } from '../components/Layout';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Switch } from '../components/ui/switch';
+import { useAuth } from '../context/AuthContext';
+import { settingsApi } from '../lib/api';
+import { getProviderDefaults } from '../lib/contractUtils';
+import { supabase } from '../lib/supabase';
+import { formatCurrency } from '../lib/utils';
+
+const SECTIONS = [
+  { id: 'profile', label: 'Perfil', icon: UserRound },
+  { id: 'professional', label: 'Dados profissionais', icon: Building2 },
+  { id: 'financial', label: 'Preferências financeiras', icon: Wallet },
+  { id: 'alerts', label: 'Alertas', icon: BellRing },
+  { id: 'security', label: 'Segurança', icon: LockKeyhole },
+];
+
+const DEFAULT_ALERTS = {
+  client_email_reminders: false,
+  in_app_alerts: true,
+  owner_email_alerts: true,
+};
+
+const TIMEZONES = [
+  ['America/Sao_Paulo', 'Brasília, São Paulo (UTC−03:00)'],
+  ['America/Manaus', 'Manaus (UTC−04:00)'],
+  ['America/Rio_Branco', 'Rio Branco (UTC−05:00)'],
+  ['America/Belem', 'Belém (UTC−03:00)'],
+  ['America/Noronha', 'Fernando de Noronha (UTC−02:00)'],
+  ['Europe/Lisbon', 'Lisboa'],
+  ['UTC', 'UTC'],
+];
+
+function createFormState(data) {
+  return {
+    name: data.name || '',
+    timezone: data.timezone || 'America/Sao_Paulo',
+    provider: getProviderDefaults(data.provider, data.provider_configured),
+    alerts: { ...DEFAULT_ALERTS, ...(data.alerts || {}) },
+  };
+}
+
+function getErrorMessage(error, fallback) {
+  const detail = error.response?.data?.detail;
+  return (typeof detail === 'string' && detail) || error.message || fallback;
+}
+
+function centsToInput(cents) {
+  if (cents === null || cents === undefined) return '0,00';
+  return `${cents < 0 ? '-' : ''}${(Math.abs(cents) / 100).toFixed(2).replace('.', ',')}`;
+}
+
+function amountInputToCents(value) {
+  const cleaned = value.trim().replace(/\s|R\$/g, '');
+  const negative = cleaned.startsWith('-');
+  const digits = cleaned.replace(/[^\d,.]/g, '');
+  if (!digits) return NaN;
+  const decimal = digits.includes(',')
+    ? digits.replace(/\./g, '').replace(',', '.')
+    : digits;
+  const amount = Number(decimal);
+  return Number.isFinite(amount) ? Math.round(amount * 100) * (negative ? -1 : 1) : NaN;
+}
+
+function Field({ id, label, children, hint }) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-sm text-zinc-300">{label}</Label>
+      {children}
+      {hint && <p className="text-xs leading-relaxed text-zinc-400">{hint}</p>}
+    </div>
+  );
+}
+
+function ToggleRow({ id, title, description, checked, onCheckedChange }) {
+  return (
+    <div className="flex items-start justify-between gap-5 py-4">
+      <div className="min-w-0">
+        <Label htmlFor={id} className="cursor-pointer text-sm font-medium text-zinc-100">{title}</Label>
+        <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-zinc-400">{description}</p>
+      </div>
+      <Switch
+        id={id}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        aria-label={title}
+        className="mt-0.5 data-[state=checked]:bg-emerald-600"
+      />
+    </div>
+  );
+}
+
+export function SettingsPage() {
+  const { user, refreshUser } = useAuth();
+  const fileInputRef = useRef(null);
+  const [activeSectionId, setActiveSectionId] = useState('profile');
+  const [form, setForm] = useState(null);
+  const [savedForm, setSavedForm] = useState(null);
+  const [email, setEmail] = useState('');
+  const [avatarPath, setAvatarPath] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [initialBalance, setInitialBalance] = useState('0,00');
+  const [initialBalanceCents, setInitialBalanceCents] = useState(null);
+  const [balanceEditable, setBalanceEditable] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [balanceBusy, setBalanceBusy] = useState(false);
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [message, setMessage] = useState(null);
+  const [loadError, setLoadError] = useState('');
+
+  const loadSettings = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const { data } = await settingsApi.get();
+      const nextForm = createFormState(data);
+      setForm(nextForm);
+      setSavedForm(nextForm);
+      setEmail(data.email || '');
+      setEmailInput(data.email || '');
+      setAvatarPath(data.avatar_path || null);
+      setInitialBalanceCents(data.initial_balance_cents);
+      setInitialBalance(centsToInput(data.initial_balance_cents));
+      setBalanceEditable(Boolean(data.initial_balance_editable));
+
+      if (data.avatar_path) {
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from('avatars')
+          .createSignedUrl(data.avatar_path, 3600);
+        if (signedUrlError) {
+          setMessage({
+            type: 'error',
+            text: getErrorMessage(signedUrlError, 'Não foi possível carregar a foto de perfil.'),
+          });
+        } else {
+          setAvatarUrl(signedUrlData.signedUrl);
+        }
+      } else {
+        setAvatarUrl('');
+      }
+    } catch (error) {
+      setLoadError(getErrorMessage(error, 'Não foi possível carregar as configurações.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  const dirty = useMemo(
+    () => Boolean(form && savedForm && JSON.stringify(form) !== JSON.stringify(savedForm)),
+    [form, savedForm],
+  );
+
+  const updateForm = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const updateProvider = (field, value) => {
+    setForm((current) => ({
+      ...current,
+      provider: { ...current.provider, [field]: value },
+    }));
+  };
+
+  const updateAlert = (field, value) => {
+    setForm((current) => ({
+      ...current,
+      alerts: { ...current.alerts, [field]: value },
+    }));
+  };
+
+  const saveSettings = async () => {
+    if (!form || !dirty) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      const payload = {
+        ...form,
+        name: form.name.trim(),
+        provider: Object.fromEntries(
+          Object.entries(form.provider).map(([key, value]) => [key, value.trim()]),
+        ),
+      };
+      await settingsApi.update(payload);
+      setForm(payload);
+      setSavedForm(payload);
+      try {
+        await refreshUser();
+        setMessage({ type: 'success', text: 'Configurações salvas.' });
+      } catch (refreshError) {
+        console.error('Configurações salvas, mas o perfil não foi atualizado:', refreshError);
+        setMessage({
+          type: 'error',
+          text: 'Configurações salvas, mas não foi possível atualizar o perfil exibido. Recarregue a página.',
+        });
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: getErrorMessage(error, 'Não foi possível salvar as configurações.'),
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const refreshAvatarUrl = async (path) => {
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .createSignedUrl(path, 3600);
+    if (error) throw error;
+    setAvatarUrl(data.signedUrl);
+  };
+
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setMessage({ type: 'error', text: 'Use uma imagem JPG, PNG ou WebP.' });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'A imagem deve ter no máximo 2 MB.' });
+      return;
+    }
+
+    const path = `${user.id}/avatar`;
+    setAvatarBusy(true);
+    setMessage(null);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+      await settingsApi.updateAvatar(path);
+      setAvatarPath(path);
+      await refreshAvatarUrl(path);
+      await refreshUser();
+      setMessage({ type: 'success', text: 'Foto de perfil atualizada.' });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: getErrorMessage(error, 'Não foi possível atualizar a foto.'),
+      });
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const removeAvatar = async () => {
+    if (!avatarPath) return;
+    setAvatarBusy(true);
+    setMessage(null);
+    try {
+      await settingsApi.updateAvatar(null);
+      setAvatarPath(null);
+      setAvatarUrl('');
+      await refreshUser();
+      const { error } = await supabase.storage.from('avatars').remove([avatarPath]);
+      if (error) throw error;
+      setMessage({ type: 'success', text: 'Foto de perfil removida.' });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: getErrorMessage(error, 'Não foi possível remover a foto.'),
+      });
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const saveOpeningBalance = async () => {
+    const amountCents = amountInputToCents(initialBalance);
+    if (!Number.isFinite(amountCents)) {
+      setMessage({ type: 'error', text: 'Informe um saldo inicial válido.' });
+      return;
+    }
+    setBalanceBusy(true);
+    setMessage(null);
+    try {
+      const { data } = await settingsApi.updateOpeningBalance({ amount_cents: amountCents });
+      setInitialBalanceCents(data.amount_cents);
+      setInitialBalance(centsToInput(data.amount_cents));
+      setBalanceEditable(data.editable);
+      setMessage({ type: 'success', text: 'Saldo inicial atualizado.' });
+    } catch (error) {
+      if (error.response?.status === 409) setBalanceEditable(false);
+      setMessage({
+        type: 'error',
+        text: getErrorMessage(error, 'Não foi possível atualizar o saldo inicial.'),
+      });
+    } finally {
+      setBalanceBusy(false);
+    }
+  };
+
+  const changeEmail = async (event) => {
+    event.preventDefault();
+    const nextEmail = emailInput.trim().toLowerCase();
+    if (!nextEmail || nextEmail === email) {
+      setMessage({ type: 'error', text: 'Informe um e-mail diferente do atual.' });
+      return;
+    }
+    setEmailBusy(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: nextEmail });
+      if (error) throw error;
+      setMessage({
+        type: 'success',
+        text: 'Solicitação enviada. Confirme a alteração pelos links enviados pelo Supabase.',
+      });
+    } catch (error) {
+      setMessage({ type: 'error', text: getErrorMessage(error, 'Não foi possível alterar o e-mail.') });
+    } finally {
+      setEmailBusy(false);
+    }
+  };
+
+  const changePassword = async (event) => {
+    event.preventDefault();
+    if (password.length < 8) {
+      setMessage({ type: 'error', text: 'A nova senha deve ter pelo menos 8 caracteres.' });
+      return;
+    }
+    if (password !== passwordConfirmation) {
+      setMessage({ type: 'error', text: 'A confirmação da senha não corresponde.' });
+      return;
+    }
+    setPasswordBusy(true);
+    setMessage(null);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      setPassword('');
+      setPasswordConfirmation('');
+      setMessage({ type: 'success', text: 'Senha atualizada.' });
+    } catch (error) {
+      setMessage({ type: 'error', text: getErrorMessage(error, 'Não foi possível alterar a senha.') });
+    } finally {
+      setPasswordBusy(false);
+    }
+  };
+
+  const activeSection = SECTIONS.find((section) => section.id === activeSectionId) || SECTIONS[0];
+  const ActiveSectionIcon = activeSection.icon;
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex min-h-[50vh] items-center justify-center text-zinc-300" role="status">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin text-emerald-400" />
+          Carregando configurações...
+        </div>
+      </Layout>
+    );
+  }
+
+  if (loadError || !form) {
+    return (
+      <Layout>
+        <div className="mx-auto max-w-2xl rounded-xl border border-rose-500/30 bg-[#18181b] p-6 text-center">
+          <CircleAlert className="mx-auto h-6 w-6 text-rose-300" />
+          <p className="mt-3 text-sm text-rose-200" role="alert">{loadError || 'Configurações indisponíveis.'}</p>
+          <Button
+            type="button"
+            onClick={loadSettings}
+            variant="outline"
+            className="mt-5 border-zinc-600 text-zinc-100 hover:bg-zinc-800"
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="mx-auto max-w-[1440px] space-y-6" data-testid="settings-page">
+        <header className="flex flex-col gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-white lg:text-3xl">Configurações</h1>
+          <p className="max-w-[65ch] text-sm leading-relaxed text-zinc-300">
+            Gerencie seu perfil, os dados usados nos documentos e as preferências da sua conta.
+          </p>
+        </header>
+
+        {message && (
+          <div
+            className={`flex items-start gap-2 rounded-lg border px-4 py-3 text-sm ${
+              message.type === 'success'
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100'
+                : 'border-rose-500/30 bg-rose-500/10 text-rose-100'
+            }`}
+            role={message.type === 'error' ? 'alert' : 'status'}
+            aria-live="polite"
+          >
+            {message.type === 'success'
+              ? <Check className="mt-0.5 h-4 w-4 shrink-0" />
+              : <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />}
+            <span>{message.text}</span>
+          </div>
+        )}
+
+        <div className="grid items-start gap-5 lg:grid-cols-[210px_minmax(0,1fr)_270px]">
+          <aside className="order-1 rounded-xl border border-zinc-800 bg-[#18181b] p-4 lg:order-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-500/15 text-base font-semibold text-emerald-200">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  form.name.trim().charAt(0).toUpperCase() || 'U'
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">{form.name || 'Seu perfil'}</p>
+                <p className="truncate text-xs text-zinc-300">{email}</p>
+              </div>
+            </div>
+            <div className="my-4 h-px bg-zinc-700" />
+            <dl className="space-y-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-zinc-300">Moeda</dt>
+                <dd className="font-medium text-zinc-100">BRL · R$</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-zinc-300">Dados profissionais</dt>
+                <dd className="font-medium text-zinc-100">
+                  {form.provider.display_name.trim() ? 'Configurados' : 'Pendentes'}
+                </dd>
+              </div>
+            </dl>
+            <div className="mt-4 rounded-lg bg-zinc-900/80 px-3 py-2.5">
+              <p className="text-xs text-zinc-300">Saldo inicial</p>
+              <p className="mt-1 tabular-nums text-sm font-semibold text-white">
+                {initialBalanceCents === null ? 'Não definido' : formatCurrency(initialBalanceCents)}
+              </p>
+            </div>
+            <p className="mt-3 text-xs text-zinc-400">
+              {dirty ? 'Há alterações ainda não salvas.' : 'Tudo salvo nesta sessão.'}
+            </p>
+            <Button
+              type="button"
+              onClick={saveSettings}
+              disabled={!dirty || saving}
+              className="mt-4 w-full bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              {saving
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Save className="h-4 w-4" />}
+              {saving ? 'Salvando...' : 'Salvar alterações'}
+            </Button>
+          </aside>
+
+          <nav
+            aria-label="Seções de configurações"
+            className="order-2 -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0"
+          >
+            {SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const selected = section.id === activeSectionId;
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  aria-current={selected ? 'page' : undefined}
+                  onClick={() => setActiveSectionId(section.id)}
+                  className={`inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                    selected
+                      ? 'bg-emerald-500/15 font-medium text-emerald-100'
+                      : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {section.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          <section key={activeSectionId} className="settings-panel-enter order-3 min-w-0 rounded-xl border border-zinc-800 bg-[#18181b] p-5 sm:p-6 lg:order-2">
+            <div className="mb-6 flex items-start justify-between gap-4 border-b border-zinc-700 pb-5">
+              <div className="flex items-start gap-3">
+                <ActiveSectionIcon className="mt-0.5 h-5 w-5 text-emerald-300" />
+                <div>
+                  <h2 className="text-lg font-semibold text-white">{activeSection.label}</h2>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                    {activeSection.id === 'profile' && 'Atualize sua identificação e foto de perfil.'}
+                    {activeSection.id === 'professional' && 'Esses dados são reutilizados em novas propostas e contratos.'}
+                    {activeSection.id === 'financial' && 'Defina o fuso dos vencimentos. Os valores permanecem em reais.'}
+                    {activeSection.id === 'alerts' && 'Escolha quais avisos o sistema deve enviar e exibir.'}
+                    {activeSection.id === 'security' && 'Altere seu e-mail de acesso ou crie uma nova senha.'}
+                  </p>
+                </div>
+              </div>
+              {dirty && (
+                <span className="shrink-0 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-200">
+                  Não salvo
+                </span>
+              )}
+            </div>
+
+            {activeSection.id === 'profile' && (
+              <div className="space-y-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-800 text-2xl font-semibold text-emerald-200">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={`Foto de ${form.name}`} className="h-full w-full object-cover" />
+                    ) : (
+                      form.name.trim().charAt(0).toUpperCase() || 'U'
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">Foto de perfil</p>
+                    <p className="mt-1 text-sm text-zinc-300">JPG, PNG ou WebP, até 2 MB.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleAvatarChange}
+                        className="sr-only"
+                        aria-label="Selecionar foto de perfil"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={avatarBusy}
+                        className="bg-zinc-700 text-white hover:bg-zinc-600"
+                      >
+                        {avatarBusy
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <ImagePlus className="h-4 w-4" />}
+                        {avatarPath ? 'Trocar foto' : 'Enviar foto'}
+                      </Button>
+                      {avatarPath && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={removeAvatar}
+                          disabled={avatarBusy}
+                          className="border-zinc-600 text-zinc-200 hover:bg-zinc-800"
+                        >
+                          Remover
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Field id="profile-name" label="Nome completo">
+                  <Input
+                    id="profile-name"
+                    value={form.name}
+                    onChange={(event) => updateForm('name', event.target.value)}
+                    maxLength={120}
+                    autoComplete="name"
+                    className="border-zinc-700 bg-zinc-900 text-white placeholder:text-zinc-400"
+                  />
+                </Field>
+                <Field id="profile-email" label="E-mail de acesso" hint="Para alterar este endereço, use a seção Segurança.">
+                  <Input
+                    id="profile-email"
+                    value={email}
+                    readOnly
+                    className="border-zinc-700 bg-zinc-900/70 text-zinc-300"
+                  />
+                </Field>
+              </div>
+            )}
+
+            {activeSection.id === 'professional' && (
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field id="provider-display-name" label="Nome profissional">
+                  <Input id="provider-display-name" value={form.provider.display_name} onChange={(event) => updateProvider('display_name', event.target.value)} maxLength={200} className="border-zinc-700 bg-zinc-900 text-white" />
+                </Field>
+                <Field id="provider-legal-name" label="Razão social / nome legal">
+                  <Input id="provider-legal-name" value={form.provider.legal_name} onChange={(event) => updateProvider('legal_name', event.target.value)} maxLength={200} className="border-zinc-700 bg-zinc-900 text-white" />
+                </Field>
+                <Field id="provider-document" label="CPF ou CNPJ">
+                  <Input id="provider-document" value={form.provider.document} onChange={(event) => updateProvider('document', event.target.value)} maxLength={30} className="border-zinc-700 bg-zinc-900 text-white" />
+                </Field>
+                <Field id="provider-representative" label="Representante legal">
+                  <Input id="provider-representative" value={form.provider.representative_name} onChange={(event) => updateProvider('representative_name', event.target.value)} maxLength={200} className="border-zinc-700 bg-zinc-900 text-white" />
+                </Field>
+                <Field id="provider-email" label="E-mail profissional">
+                  <Input id="provider-email" type="email" value={form.provider.email} onChange={(event) => updateProvider('email', event.target.value)} maxLength={254} className="border-zinc-700 bg-zinc-900 text-white" />
+                </Field>
+                <Field id="provider-phone" label="Telefone profissional">
+                  <Input id="provider-phone" type="tel" value={form.provider.phone} onChange={(event) => updateProvider('phone', event.target.value)} maxLength={40} className="border-zinc-700 bg-zinc-900 text-white" />
+                </Field>
+                <div className="sm:col-span-2">
+                  <Field id="provider-address" label="Endereço completo">
+                    <textarea
+                      id="provider-address"
+                      value={form.provider.address}
+                      onChange={(event) => updateProvider('address', event.target.value)}
+                      maxLength={500}
+                      rows={3}
+                      className="flex w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                    />
+                  </Field>
+                </div>
+              </div>
+            )}
+
+            {activeSection.id === 'financial' && (
+              <div className="space-y-7">
+                <Field id="settings-timezone" label="Fuso horário" hint="Usado para exibir datas e calcular vencimentos nos alertas.">
+                  <select
+                    id="settings-timezone"
+                    value={form.timezone}
+                    onChange={(event) => updateForm('timezone', event.target.value)}
+                    className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                  >
+                    {TIMEZONES.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                    {!TIMEZONES.some(([value]) => value === form.timezone) && (
+                      <option value={form.timezone}>{form.timezone}</option>
+                    )}
+                  </select>
+                </Field>
+                <div className="rounded-lg border border-zinc-700 bg-zinc-900/60 p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-zinc-100">
+                    <Wallet className="h-4 w-4 text-emerald-300" />
+                    Moeda padrão
+                  </div>
+                  <p className="mt-2 text-sm text-zinc-300">Real brasileiro (BRL · R$)</p>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                    A moeda permanece fixa para preservar os valores já registrados.
+                  </p>
+                </div>
+                <div className="border-t border-zinc-700 pt-6">
+                  <div className="mb-4 flex items-start gap-3">
+                    <Clock3 className="mt-0.5 h-4 w-4 text-zinc-300" />
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">Saldo inicial</h3>
+                      <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+                        {balanceEditable
+                          ? 'Pode ser alterado enquanto não houver outros lançamentos financeiros.'
+                          : 'Bloqueado porque já existem outros lançamentos no histórico.'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <Field id="opening-balance" label="Valor inicial (R$)">
+                      <Input
+                        id="opening-balance"
+                        inputMode="decimal"
+                        value={initialBalance}
+                        onChange={(event) => setInitialBalance(event.target.value)}
+                        disabled={!balanceEditable || balanceBusy}
+                        aria-describedby="opening-balance-hint"
+                        className="border-zinc-700 bg-zinc-900 text-white disabled:text-zinc-400"
+                      />
+                    </Field>
+                    <Button
+                      type="button"
+                      onClick={saveOpeningBalance}
+                      disabled={!balanceEditable || balanceBusy}
+                      className="bg-zinc-700 text-white hover:bg-zinc-600"
+                    >
+                      {balanceBusy
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <Save className="h-4 w-4" />}
+                      Atualizar saldo
+                    </Button>
+                  </div>
+                  <p id="opening-balance-hint" className="mt-2 text-xs text-zinc-400">
+                    Saldo atual registrado: {initialBalanceCents === null ? 'não definido' : formatCurrency(initialBalanceCents)}.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeSection.id === 'alerts' && (
+              <div className="divide-y divide-zinc-700">
+                <ToggleRow
+                  id="client-email-reminders"
+                  title="Enviar lembretes aos clientes"
+                  description="E-mail automático para receitas com vencimento nos próximos 3 dias. A receita precisa estar vinculada a um cliente cadastrado com e-mail."
+                  checked={form.alerts.client_email_reminders}
+                  onCheckedChange={(checked) => updateAlert('client_email_reminders', checked)}
+                />
+                <ToggleRow
+                  id="in-app-alerts"
+                  title="Alertas dentro do sistema"
+                  description="Exibe no Dashboard receitas e despesas vencidas ou com vencimento nos próximos 7 dias."
+                  checked={form.alerts.in_app_alerts}
+                  onCheckedChange={(checked) => updateAlert('in_app_alerts', checked)}
+                />
+                <ToggleRow
+                  id="owner-email-alerts"
+                  title="Resumo por e-mail para mim"
+                  description="Envia diariamente um resumo de receitas e despesas vencidas ou próximas do vencimento para o e-mail da conta."
+                  checked={form.alerts.owner_email_alerts}
+                  onCheckedChange={(checked) => updateAlert('owner_email_alerts', checked)}
+                />
+                <div className="flex items-start gap-3 pt-5 text-sm text-zinc-300">
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-zinc-300" />
+                  <p className="max-w-[65ch] leading-relaxed">
+                    O envio automático depende de RESEND_API_KEY, SENDER_EMAIL e do agendamento diário configurado no Vercel.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeSection.id === 'security' && (
+              <div className="space-y-8">
+                <form onSubmit={changeEmail} className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">Alterar e-mail de acesso</h3>
+                    <p className="mt-1 text-sm text-zinc-300">E-mail atual: {email}</p>
+                  </div>
+                  <Field id="new-email" label="Novo e-mail">
+                    <Input
+                      id="new-email"
+                      type="email"
+                      value={emailInput}
+                      onChange={(event) => setEmailInput(event.target.value)}
+                      autoComplete="email"
+                      required
+                      className="border-zinc-700 bg-zinc-900 text-white"
+                    />
+                  </Field>
+                  <Button type="submit" disabled={emailBusy} className="bg-zinc-700 text-white hover:bg-zinc-600">
+                    {emailBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Solicitar alteração
+                  </Button>
+                </form>
+
+                <form onSubmit={changePassword} className="space-y-4 border-t border-zinc-700 pt-6">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">Alterar senha</h3>
+                    <p className="mt-1 text-sm text-zinc-300">Use pelo menos 8 caracteres.</p>
+                  </div>
+                  <Field id="new-password" label="Nova senha">
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                      className="border-zinc-700 bg-zinc-900 text-white"
+                    />
+                  </Field>
+                  <Field id="confirm-password" label="Confirmar nova senha">
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={passwordConfirmation}
+                      onChange={(event) => setPasswordConfirmation(event.target.value)}
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                      className="border-zinc-700 bg-zinc-900 text-white"
+                    />
+                  </Field>
+                  <Button type="submit" disabled={passwordBusy} className="bg-zinc-700 text-white hover:bg-zinc-600">
+                    {passwordBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+                    Atualizar senha
+                  </Button>
+                </form>
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </Layout>
+  );
+}
