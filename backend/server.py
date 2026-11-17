@@ -2307,7 +2307,7 @@ async def send_payment_reminder(
             <p><strong>Vencimento:</strong> {due_date_formatted}</p>
         </div>
         {f'<p>{custom_msg}</p>' if custom_msg else ''}
-        <p>Atenciosamente,<br>AnkorGestão</p>
+        <p>Atenciosamente,<br>{escaped_user_name}</p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
         <p style="color: #6b7280; font-size: 12px;">
             Este email foi enviado via AnkorGestão
@@ -2426,7 +2426,7 @@ async def send_automatic_reminder(
             <p><strong>Valor:</strong> {amount_formatted}</p>
             <p><strong>Vencimento:</strong> {due_date_formatted}</p>
         </div>
-        <p>Atenciosamente,<br>AnkorGestão</p>
+        <p>Atenciosamente,<br>{html.escape(user['name'])}</p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
         <p style="color: #6b7280; font-size: 12px;">
             Este email foi enviado automaticamente via AnkorGestão
