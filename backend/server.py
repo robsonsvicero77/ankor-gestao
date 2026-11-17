@@ -2285,6 +2285,11 @@ async def send_payment_reminder(
     # Parse due date
     due_date = datetime.fromisoformat(receivable["due_date"].replace('Z', '+00:00'))
     due_date_formatted = due_date.strftime("%d/%m/%Y")
+    reminder_intro = (
+        "Este é um lembrete sobre um pagamento próximo do vencimento:"
+        if due_date.date() >= datetime.now(timezone.utc).date()
+        else "Este é um lembrete referente ao pagamento pendente:"
+    )
     
     # Build email HTML
     custom_msg = html.escape(request.custom_message or "")
@@ -2295,14 +2300,14 @@ async def send_payment_reminder(
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #10b981;">Lembrete de Pagamento</h2>
         <p>Olá, {escaped_client_name},</p>
-        <p>Este é um lembrete referente ao pagamento pendente:</p>
+        <p>{reminder_intro}</p>
         <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <p><strong>Descrição:</strong> {escaped_description}</p>
             <p><strong>Valor:</strong> {amount_formatted}</p>
             <p><strong>Vencimento:</strong> {due_date_formatted}</p>
         </div>
         {f'<p>{custom_msg}</p>' if custom_msg else ''}
-        <p>Atenciosamente,<br>{escaped_user_name}</p>
+        <p>Atenciosamente,<br>AnkorGestão</p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
         <p style="color: #6b7280; font-size: 12px;">
             Este email foi enviado via AnkorGestão
@@ -2421,7 +2426,7 @@ async def send_automatic_reminder(
             <p><strong>Valor:</strong> {amount_formatted}</p>
             <p><strong>Vencimento:</strong> {due_date_formatted}</p>
         </div>
-        <p>Atenciosamente,<br>{html.escape(user['name'])}</p>
+        <p>Atenciosamente,<br>AnkorGestão</p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
         <p style="color: #6b7280; font-size: 12px;">
             Este email foi enviado automaticamente via AnkorGestão

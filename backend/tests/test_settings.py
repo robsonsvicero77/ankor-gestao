@@ -1,6 +1,7 @@
 import asyncio
 import os
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi import HTTPException
@@ -240,12 +241,25 @@ def test_create_receivable_links_only_a_client_from_the_current_tenant(monkeypat
     assert result.client_name == "Empresa"
 
 
-def test_manual_reminder_sends_to_linked_client_email(monkeypatch):
+@pytest.mark.parametrize(
+    ("due_in_days", "expected_intro"),
+    [
+        (2, "Este é um lembrete sobre um pagamento próximo do vencimento:"),
+        (-2, "Este é um lembrete referente ao pagamento pendente:"),
+    ],
+)
+def test_manual_reminder_sends_contextual_message_to_linked_client_email(
+    monkeypatch,
+    due_in_days,
+    expected_intro,
+):
     tenant_id = str(uuid.uuid4())
     user_id = str(uuid.uuid4())
     receivable_id = str(uuid.uuid4())
     client_id = str(uuid.uuid4())
     inserted = []
+    sent_messages = []
+    due_date = datetime.now(timezone.utc) + timedelta(days=due_in_days)
 
     async def fetch_one(table, filters):
         if table == "receivables":
@@ -257,7 +271,7 @@ def test_manual_reminder_sends_to_linked_client_email(monkeypatch):
                 "client_name": "Empresa",
                 "description": "Projeto",
                 "amount_cents": 10000,
-                "due_date": "2026-01-20T00:00:00+00:00",
+                "due_date": due_date.isoformat(),
                 "paid_at": None,
             }
         if table == "clients":
@@ -277,6 +291,7 @@ def test_manual_reminder_sends_to_linked_client_email(monkeypatch):
 
     async def send_email(_send, params):
         assert params["to"] == ["financeiro@example.com"]
+        sent_messages.append(params)
         return {"id": "email-123"}
 
     monkeypatch.setattr(server.database, "fetch_one", fetch_one)
@@ -294,3 +309,4 @@ def test_manual_reminder_sends_to_linked_client_email(monkeypatch):
     assert response.success is True
     assert response.email_id == "email-123"
     assert inserted[0]["client_name"] == "Empresa"
+    assert expected_intro in sent_messages[0]["html"]
