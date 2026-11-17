@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from './ui/sheet';
 import { supabase } from '../lib/supabase';
 
 const navItems = [
@@ -70,7 +71,7 @@ export function Layout({ children }) {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center px-6 border-b border-border">
-            <h1 className="text-xl font-bold text-text-primary">
+            <h1 className="text-xl font-bold text-text-primary text-brand-accent">
               Ankor<span className="text-brand-primary">Gestão</span>
             </h1>
           </div>
@@ -135,27 +136,21 @@ export function Layout({ children }) {
         <h1 className="text-lg font-bold text-text-primary">
           Ankor<span className="text-brand-primary">Gestão</span>
         </h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
-          aria-expanded={mobileMenuOpen}
-          aria-controls="mobile-navigation-menu"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          data-testid="mobile-menu-btn"
-        >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
-      </header>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div id="mobile-navigation-menu" className="lg:hidden fixed inset-0 z-40 bg-overlay" onClick={() => setMobileMenuOpen(false)}>
-          <div 
-            className="absolute right-0 top-14 bottom-0 w-64 bg-surface border-l border-border p-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <nav className="space-y-1">
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={mobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+              data-testid="mobile-menu-btn"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="top-14 bottom-0 h-auto w-64 border-l border-border p-4">
+            <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
+            <SheetDescription className="sr-only">Navegação principal do sistema</SheetDescription>
+            <nav aria-label="Navegação principal" className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = isNavItemActive(location.pathname, item.path);
@@ -188,9 +183,9 @@ export function Layout({ children }) {
                 Sair
               </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </SheetContent>
+        </Sheet>
+      </header>
 
       {/* Mobile Bottom Navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t border-border bg-surface/95 backdrop-blur h-16">
