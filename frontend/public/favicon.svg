@@ -1,4 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#5A0048" />
-  <path d="M32 11 11 53h10l4-9h14l4 9h10L32 11Zm0 17 4 9h-8l4-9Z" fill="#FFFFFF" />
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 600">
+  <defs>
+    <style>
+      .cls-1{fill:#f1e3ed}
+      .cls-2{fill:#5a0048}
+    </style>
+  </defs>
+  <title>ícone_app</title>
+  <g id="Layer_1" data-name="Layer 1">
+    <path d="M144 0 L456 0 C535.529 0 600 64.471 600 144 L600 456 C600 535.529 535.529 600 456 600 L144 600 C64.471 600 0 535.529 0 456 L0 144 C0 64.471 64.471 0 144 0 Z" class="cls-1"/>
+    <path d="M90 510 L300 90 L510 510 L357.925 510 C387.425 510 407.733 483.677 397.104 459.216 L300 235.74 L202.896 459.216 C192.267 483.677 212.575 510 242.075 510 Z" class="cls-2"/>
+  </g>
 </svg>

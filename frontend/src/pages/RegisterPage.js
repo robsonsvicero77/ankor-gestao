@@ -73,10 +73,12 @@ export function RegisterPage() {
       <div className="flex-1 flex items-center justify-center p-4 lg:p-8">
         <Card className="w-full max-w-md bg-surface border-border">
           <CardHeader className="space-y-1">
-            <div className="mb-4 lg:hidden">
-              <h1 className="text-2xl font-bold text-text-primary">
-                <span className="text-brand-accent">Ankor</span><span className="text-brand-primary">Gestão</span>
-              </h1>
+            <div className="mb-4">
+              <img
+                src={`${process.env.PUBLIC_URL || ''}/logo_ankor.svg`}
+                alt="Ankor Gestão"
+                className="h-8 w-auto object-contain"
+              />
             </div>
             <CardTitle className="text-h3 text-text-primary">Criar conta</CardTitle>
             <CardDescription className="text-text-secondary">

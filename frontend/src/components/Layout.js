@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
@@ -119,9 +119,13 @@ export function Layout({ children }) {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center px-6 border-b border-border">
-            <h1 className="text-xl font-bold text-text-primary">
-              <span className="text-brand-accent">Ankor</span><span className="text-brand-primary">Gestão</span>
-            </h1>
+            <Link to="/dashboard" className="flex items-center">
+              <img
+                src={`${process.env.PUBLIC_URL || ''}/logo_ankor.svg`}
+                alt="Ankor Gestão"
+                className="h-7 w-auto object-contain"
+              />
+            </Link>
           </div>
 
           {/* Navigation */}
@@ -181,9 +185,13 @@ export function Layout({ children }) {
 
       {/* Mobile Header */}
       <header className="lg:hidden sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-surface/95 backdrop-blur px-4">
-        <h1 className="text-lg font-bold text-text-primary">
-          <span className="text-brand-accent">Ankor</span><span className="text-brand-primary">Gestão</span>
-        </h1>
+        <Link to="/dashboard" className="flex items-center">
+          <img
+            src={`${process.env.PUBLIC_URL || ''}/logo_ankor.svg`}
+            alt="Ankor Gestão"
+            className="h-6 w-auto object-contain"
+          />
+        </Link>
         <Button
           variant="ghost"
           size="icon"
